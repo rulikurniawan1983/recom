@@ -137,7 +137,11 @@ export default function DashboardClient({ user, profile, nkvRegistrations, dokte
           </a>
         ) : reg.status === 'revision_requested' ? (
           <span className="text-sm text-red-600">Perlu revisi - Silakan cek detail</span>
-        ) : null}
+        ) : (
+          <Link href={reg.type === 'NKV' ? `/tracking/${reg.registration_number}` : `/tracking/${reg.registration_number}`} className="text-sm text-blue-600 hover:underline">
+            Cek Detail
+          </Link>
+        )}
       </CardContent>
     </Card>
   )

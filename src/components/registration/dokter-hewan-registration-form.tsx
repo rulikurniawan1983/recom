@@ -65,29 +65,31 @@ export default function DokterHewanRegistrationForm() {
       const random = Math.random().toString(36).substr(2, 6).toUpperCase()
       const regNumber = `DKH-${year}-${random}`
       
-      // Save to Supabase
-      const { error: submitError } = await supabase
-        .from('dokter_hewan_registrations')
-        .insert({
-          user_id: user.id,
-          registration_number: regNumber,
-          full_name: formData.fullName,
-          birth_place_date: formData.birthPlaceDate,
-          ktp_address: formData.ktpAddress,
-          clinic_address: formData.clinicAddress,
-          phone: formData.phone,
-          email: formData.email,
-          status: 'submitted',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
+       // Save to Supabase
+       const { error: submitError } = await supabase
+         .from('dokter_hewan_registrations')
+         .insert({
+           user_id: user.id,
+           registration_number: regNumber,
+           full_name: formData.fullName,
+           clinic_address: formData.clinicAddress,
+           phone: formData.phone,
+           email: formData.email,
+           status: 'submitted',
+           created_at: new Date().toISOString(),
+           updated_at: new Date().toISOString(),
+         })
 
       if (submitError) throw submitError
 
       setTrackingCode(regNumber)
       setShowSuccess(true)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal menyimpan pendaftaran')
+      console.error('Registration error:', err)
+      const errorMessage = err && typeof err === 'object' && 'message' in err 
+        ? String((err as { message?: string }).message) 
+        : 'Gagal menyimpan pendaftaran'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }

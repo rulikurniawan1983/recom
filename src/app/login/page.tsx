@@ -54,9 +54,10 @@ export default function LoginPage() {
         // Debug: log profile data
         console.log('Profile check:', { profile, profileError, userEmail: data.user.email })
         
-        // Check if admin by role OR by known admin email
+// Check if admin by role OR by known admin email
         const isAdmin = profile?.role === 'admin' || 
-                       data.user.email === 'rulikurniawan1983@gmail.com'
+                        data.user.email === 'admin@recom.com' ||
+                        data.user.email === 'rulikurniawan1983@gmail.com'
         
         if (isAdmin) {
           router.push('/admin/dashboard')

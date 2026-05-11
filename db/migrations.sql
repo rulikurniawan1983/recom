@@ -10,6 +10,22 @@ create table if not exists profiles (
   updated_at timestamp with time zone default now()
 );
 
+-- RLS policies for profiles
+alter table profiles enable row level security;
+
+create policy "Users can view own profile"
+on profiles for select
+to authenticated
+using (auth.uid() = id);
+
+create policy "Users can update own profile"
+on profiles for update
+to authenticated
+using (auth.uid() = id);
+
+-- Allow service_role to bypass RLS for inserts/updates
+-- This is needed for the admin setup API
+
 -- Business units table
 create table if not exists business_units (
   id uuid primary key default uuid_generate_v4(),
@@ -37,6 +53,13 @@ create table if not exists nkv_registrations (
   business_unit_id uuid references business_units,
   product_type_id uuid references product_types,
   registration_number text unique not null,
+  business_name text,
+  business_address text,
+  business_phone text,
+  business_email text,
+  business_type text,
+  product_type text,
+  product_description text,
   status text check (status in (
     'draft', 'submitted', 'document_verification', 
     'field_inspection', 'assessment', 'approved', 
@@ -106,6 +129,10 @@ create table if not exists dokter_hewan_registrations (
   clinic_address text,
   phone text,
   email text,
+  color_photo_url text,
+  diploma_url text,
+  competency_cert_url text,
+  professional_recommendation_url text,
   status text check (status in (
     'draft', 'submitted', 'document_verification', 
     'field_inspection', 'assessment', 'approved', 
@@ -147,6 +174,40 @@ create table if not exists registration_comments (
   comment text not null,
   created_at timestamp with time zone default now()
 );
+
+-- RLS policies for registrations
+alter table dokter_hewan_registrations enable row level security;
+alter table nkv_registrations enable row level security;
+
+create policy "Users can insert dokter_hewan_registrations"
+on dokter_hewan_registrations for insert
+to authenticated
+with check (true);
+
+create policy "Users can view own dokter_hewan_registrations"
+on dokter_hewan_registrations for select
+to authenticated
+using (user_id = auth.uid());
+
+create policy "Users can update own dokter_hewan_registrations"
+on dokter_hewan_registrations for update
+to authenticated
+using (user_id = auth.uid());
+
+create policy "Users can insert nkv_registrations"
+on nkv_registrations for insert
+to authenticated
+with check (true);
+
+create policy "Users can view own nkv_registrations"
+on nkv_registrations for select
+to authenticated
+using (user_id = auth.uid());
+
+create policy "Users can update own nkv_registrations"
+on nkv_registrations for update
+to authenticated
+using (user_id = auth.uid());
 
 -- Storage bucket for registration documents
 insert into storage.buckets (id, name, public) 

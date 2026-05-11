@@ -152,11 +152,18 @@ export default function AdminDashboardClient({ profile, user, allRegistrations }
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-blue-900">
-            Selamat Datang, Admin {profile?.full_name?.split(' ')[0] || 'Admin'}!
-          </h2>
-          <p className="text-blue-700 mt-1">Dashboard untuk monitoring seluruh permohonan</p>
+        <div className="mb-6 flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-bold text-blue-900">
+              Selamat Datang, Admin {profile?.full_name?.split(' ')[0] || 'Admin'}!
+            </h2>
+            <p className="text-blue-700 mt-1">Dashboard untuk monitoring seluruh permohonan</p>
+          </div>
+          <Link href="/admin/users">
+            <Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
+              Kelola Pengguna
+            </Button>
+          </Link>
         </div>
 
         {/* Statistics Cards */}

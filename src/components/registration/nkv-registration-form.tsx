@@ -73,6 +73,13 @@ export default function NKVRegistrationForm() {
         .insert({
           user_id: user.id,
           registration_number: regNumber,
+          business_name: formData.businessName,
+          business_address: formData.businessAddress,
+          business_phone: formData.businessPhone,
+          business_email: formData.businessEmail,
+          business_type: formData.businessType,
+          product_type: formData.productId,
+          product_description: formData.productDescription,
           status: 'submitted',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -83,7 +90,11 @@ export default function NKVRegistrationForm() {
       setTrackingCode(regNumber)
       setShowSuccess(true)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal menyimpan pendaftaran')
+      console.error('Registration error:', err)
+      const errorMessage = err && typeof err === 'object' && 'message' in err 
+        ? String((err as { message?: string }).message) 
+        : 'Gagal menyimpan pendaftaran'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
