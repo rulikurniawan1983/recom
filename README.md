@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sistem Rekomendasi NKV
 
-## Getting Started
+Aplikasi web Next.js untuk pendaftaran Rekomendasi NKV (Neraca Keseimbangan Vitalitas) dengan database Supabase.
 
-First, run the development server:
+## Fitur
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Autentikasi**: Login admin dan user
+- **Pendaftaran Online**: Formulir pendaftaran NKV dengan 4 langkah
+- **Verifikasi Dokumen**: Admin dapat memverifikasi dokumen pendaftar
+- **Pemeriksaan Lapangan**: Jadwal pemeriksaan oleh petugas
+- **Penilaian & Rekomendasi**: Proses penilaian dan persetujuan
+- **Unduh Rekomendasi**: Download dokumen NKV yang disetujui
+
+## Setup
+
+### 1. Supabase Setup
+
+1. Buat project di [Supabase](https://supabase.com)
+2. Jalankan migration di `db/migrations.sql`:
+   - Buka SQL Editor di Supabase Dashboard
+   - Paste dan jalankan semua query dari file migrations.sql
+3. Buat storage bucket `registration-documents` (Public)
+4. Copy URL dan anon key ke `.env.local`
+
+### 2. Environment Variables
+
+Edit `.env.local`:
+```
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 3. Install & Run
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deployment ke Vercel
 
-## Learn More
+1. Push kode ke GitHub
+2. Import project di Vercel
+3. Tambahkan environment variables di Vercel:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+4. Deploy
 
-To learn more about Next.js, take a look at the following resources:
+## Struktur Aplikasi
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/
+├── app/
+│   ├── login/          # Halaman login
+│   ├── register/       # Halaman register
+│   ├── dashboard/      # Dashboard user/admin
+│   ├── registration/   # Form pendaftaran NKV
+│   └── admin/          # Halaman admin
+├── components/
+│   ├── ui/             # Komponen UI (Button, Card, dll)
+│   └── registration/   # Form pendaftaran
+└── lib/
+    ├── supabase.ts     # Client Supabase
+    ├── supabase-server.ts # Server Supabase
+    └── types.ts        # Type definitions
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Workflow Pendaftaran NKV
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Pendaftaran Online**: Isi form unit usaha, produk, dokumen
+2. **Verifikasi Dokumen**: Admin verifikasi kelengkapan berkas
+3. **Pemeriksaan Lapangan**: Jadwal kunjungan ke lokasi usaha
+4. **Penilaian & Rekomendasi**: Proses penilaian dan persetujuan
+5. **Unduh Rekomendasi**: Download dokumen NKV
