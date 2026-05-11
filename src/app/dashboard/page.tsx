@@ -26,15 +26,17 @@ export default async function DashboardPage() {
 
   console.log('Fetching registrations for user:', user.id)
 
-  const { data: nkvRegistrations, error: nkvError } = await supabase
+  // Fetch NKV registrations without trying to auto-join tracking_logs
+  let { data: nkvRegistrations, error: nkvError } = await supabase
     .from('nkv_registrations')
-    .select(`*, tracking_logs(status, created_at)`)
+    .select(`*`)
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
-  const { data: dokterRegistrations, error: dokterError } = await supabase
+  // Fetch Dokter Hewan registrations without trying to auto-join tracking_logs
+  let { data: dokterRegistrations, error: dokterError } = await supabase
     .from('dokter_hewan_registrations')
-    .select(`*, tracking_logs(status, created_at)`)
+    .select(`*`)
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
@@ -49,13 +51,17 @@ export default async function DashboardPage() {
     console.error('Error message:', dokterError.message);
     console.error('Error details:', JSON.stringify(dokterError));
   }
-  
-  if (dokterError) {
-    console.error('Error fetching Dokter Hewan registrations:', dokterError)
-  }
 
-  console.log('NKV Registrations:', nkvRegistrations)
-  console.log('Dokter Hewan Registrations:', dokterRegistrations)
+  // Fetch tracking logs separately for each registration if needed
+  // For now, we'll pass empty tracking_logs arrays since the UI can handle empty arrays
+  const processedNVKRegistrations = nkvRegistrations ? 
+    nkvRegistrations.map(reg => ({ ...reg, tracking_logs: [] })) : [];
+    
+  const processedDokterRegistrations = dokterRegistrations ? 
+    dokterRegistrations.map(reg => ({ ...reg, tracking_logs: [] })) : [];
 
-  return <DashboardClient user={user} profile={profile} nkvRegistrations={nkvRegistrations || []} dokterRegistrations={dokterRegistrations || []} />
+  console.log('Processed NKV Registrations:', processedNVKRegistrations);
+  console.log('Processed Dokter Hewan Registrations:', processedDokterRegistrations);
+
+  return <DashboardClient user={user} profile={profile} nkvRegistrations={processedNVKRegistrations} dokterRegistrations={processedDokterRegistrations} />
 }

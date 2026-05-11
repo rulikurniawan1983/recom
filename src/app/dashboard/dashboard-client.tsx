@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import { FileText, Clock, CheckCircle, XCircle, BarChart3 } from 'lucide-react'
+import { FileText, Clock, CheckCircle, XCircle } from 'lucide-react'
 
 interface DashboardClientProps {
   user: User
@@ -37,27 +37,13 @@ const STATUS_COLORS: Record<string, string> = {
   revision_requested: 'bg-red-100 text-red-800'
 }
 
-const STATUS_PROGRESS: Record<string, number> = {
-  draft: 10,
-  submitted: 25,
-  document_verification: 50,
-  field_inspection: 70,
-  assessment: 85,
-  approved: 100,
-  rejected: 100,
-  revision_requested: 50
-}
-
-const STEPS = [
-  { key: 'draft', label: 'Pengisian Form' },
-  { key: 'submitted', label: 'Pengajuan' },
-  { key: 'document_verification', label: 'Verifikasi Dokumen' },
-  { key: 'field_inspection', label: 'Pemeriksaan Lapangan' },
-  { key: 'assessment', label: 'Penilaian' },
-  { key: 'approved', label: 'Selesai' }
-]
-
 export default function DashboardClient({ user, profile, nkvRegistrations, dokterRegistrations }: DashboardClientProps) {
+  console.log('DashboardClient render started with:', { 
+    userId: user?.id, 
+    nkvRegistrations: nkvRegistrations.length, 
+    dokterRegistrations: dokterRegistrations.length 
+  })
+
   const router = useRouter()
   const supabase = createClient()
 
@@ -70,19 +56,21 @@ export default function DashboardClient({ user, profile, nkvRegistrations, dokte
     ...dokterRegistrations.map(r => ({ ...r, type: 'Dokter Hewan' }))
   ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
+  console.log('Processed allRegistrations count:', allRegistrations.length)
+
   return (
-<div className="min-h-screen bg-blue-100/80 backdrop-blur-sm">
-    <header className="bg-white/90 backdrop-blur-sm shadow-md border-b border-blue-200">
-      <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-        <div>
-          <h1 className="text-xl font-bold text-blue-900">Dashboard Pengguna</h1>
-          <p className="text-sm text-blue-700">Sistem Rekomendasi Veteriner</p>
-        </div>
-       <div className="flex items-center space-x-4">
-         <span className="text-sm text-gray-600">
-           {profile?.full_name || user.email}
-         </span>
-       <Button 
+    <div className="min-h-screen bg-blue-100/80 backdrop-blur-sm">
+      <header className="bg-white/90 backdrop-blur-sm shadow-md border-b border-blue-200">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+          <div>
+            <h1 className="text-xl font-bold text-blue-900">Dashboard Pengguna</h1>
+            <p className="text-sm text-blue-700">Sistem Rekomendasi Veteriner</p>
+          </div>
+          <div className="flex items-center space-x-4">
+            <span className="text-sm text-gray-600">
+              {profile?.full_name || user.email}
+            </span>
+            <Button 
               variant="outline" 
               size="sm" 
               onClick={handleLogout}
@@ -90,91 +78,94 @@ export default function DashboardClient({ user, profile, nkvRegistrations, dokte
             >
               Logout
             </Button>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
 
-    <main className="max-w-7xl mx-auto px-4 py-6">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-blue-900">
-          Selamat Datang, {profile?.full_name?.split(' ')[0] || 'User'}!
-        </h2>
-        <p className="text-blue-700 mt-1">Kelola dan pantau permohonan rekomendasi Anda</p>
-        {user.email && (
-          <p className="text-sm text-gray-500 mt-2">
-            Logged in as: <span className="font-medium">{user.email}</span>
-          </p>
-        )}
-      </div>
+      <main className="max-w-7xl mx-auto px-4 py-6">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-blue-900">
+            Selamat Datang, {profile?.full_name?.split(' ')[0] || 'User'}!
+          </h2>
+          <p className="text-blue-700 mt-1">Kelola dan pantau permohonan rekomendasi Anda</p>
+          {user.email && (
+            <p className="text-sm text-gray-500 mt-2">
+              Logged in as: <span className="font-medium">{user.email}</span>
+            </p>
+          )}
+        </div>
 
-      {/* Action Buttons - Simplified */}
-      <div className="mb-6 flex flex-col sm:flex-row gap-4">
-        <Link href="/nkv/register" className="flex-1 sm:max-w-xs">
-          <button className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
-            Rekomendasi NKV
-          </button>
-        </Link>
-        <Link href="/dokter-hewan/register" className="flex-1 sm:max-w-xs">
-          <button className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
-            Praktek Dokter Hewan
-          </button>
-        </Link>
-      </div>
+        {/* Action Buttons - Simplified */}
+        <div className="mb-6 flex flex-col sm:flex-row gap-4">
+          <Link href="/nkv/register" className="flex-1 sm:max-w-xs">
+            <button className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+              Rekomendasi NKV
+            </button>
+          </Link>
+          <Link href="/dokter-hewan/register" className="flex-1 sm:max-w-xs">
+            <button className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+              Praktek Dokter Hewan
+            </button>
+          </Link>
+        </div>
 
-      {/* Registration History - Main Focus */}
-      <div>
-        <h2 className="text-xl font-semibold mb-4 text-blue-800">Riwayat Permohonan</h2>
-        {allRegistrations.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-blue-500">Belum ada permohonan. Buat permohonan baru di atas.</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {allRegistrations.map(reg => (
-              <div key={reg.id} className="bg-white/80 backdrop-blur-sm rounded-lg shadow-sm p-4 border border-blue-200">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h3 className="font-semibold text-lg text-blue-900">{reg.registration_number}</h3>
-                    <p className="text-sm text-blue-600 flex items-center gap-2">
-                      {reg.type} • {new Date(reg.created_at).toLocaleDateString('id-ID')}
-                    </p>
+        {/* Registration History - Main Focus */}
+        <div>
+          <h2 className="text-xl font-semibold mb-4 text-blue-800">Riwayat Permohonan</h2>
+          {allRegistrations.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-blue-500">Belum ada permohonan. Buat permohonan baru di atas.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {allRegistrations.map((reg, index) => {
+                console.log('Rendering registration at index', index, ':', reg.registration_number)
+                return (
+                  <div key={reg.id} className="bg-white/80 backdrop-blur-sm rounded-lg shadow-sm p-4 border border-blue-200">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h3 className="font-semibold text-lg text-blue-900">{reg.registration_number}</h3>
+                        <p className="text-sm text-blue-600 flex items-center gap-2">
+                          {reg.type} • {new Date(reg.created_at).toLocaleDateString('id-ID')}
+                        </p>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(reg.status)}`}>
+                        {getStatusLabel(reg.status)}
+                      </span>
+                    </div>
+                    
+                    {reg.tracking_logs && reg.tracking_logs.length > 0 && (
+                      <div className="text-xs text-blue-600 mb-2">
+                        <strong>Update Terakhir:</strong> {getStatusLabel(reg.tracking_logs[0].status)} - {new Date(reg.tracking_logs[0].created_at).toLocaleDateString('id-ID')}
+                      </div>
+                    )}
+                    
+                    <div className="mt-2">
+                      {reg.recommendation_file_url ? (
+                        <a 
+                          href={reg.recommendation_file_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                        >
+                          📄 Unduh Rekomendasi
+                        </a>
+                      ) : reg.status === 'revision_requested' ? (
+                        <span className="text-sm text-red-600">⚠️ Perlu revisi - Silakan cek detail</span>
+                      ) : (
+                        <Link href={`/tracking/${reg.registration_number}`} className="text-sm text-blue-600 hover:underline">
+                          🔍 Cek Detail
+                        </Link>
+                      )}
+                    </div>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(reg.status)}`}>
-                    {getStatusLabel(reg.status)}
-                  </span>
-                </div>
-                
-                {reg.tracking_logs && reg.tracking_logs.length > 0 && (
-                  <div className="text-xs text-blue-600 mb-2">
-                    <strong>Update Terakhir:</strong> {getStatusLabel(reg.tracking_logs[0].status)} - {new Date(reg.tracking_logs[0].created_at).toLocaleDateString('id-ID')}
-                  </div>
-                )}
-                
-                <div className="mt-2">
-                  {reg.recommendation_file_url ? (
-                    <a 
-                      href={reg.recommendation_file_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-sm text-blue-600 hover:underline flex items-center gap-1"
-                    >
-                      📄 Unduh Rekomendasi
-                    </a>
-                  ) : reg.status === 'revision_requested' ? (
-                    <span className="text-sm text-red-600">⚠️ Perlu revisi - Silakan cek detail</span>
-                  ) : (
-                    <Link href={`/tracking/${reg.registration_number}`} className="text-sm text-blue-600 hover:underline">
-                      🔍 Cek Detail
-                    </Link>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </main>
-  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
   )
 }
 
