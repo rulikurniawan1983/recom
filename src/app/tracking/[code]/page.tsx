@@ -22,7 +22,7 @@ export default async function TrackingPage({ params }: { params: Promise<{ code:
     .eq('user_id', user.id)
     .single()
 
-  let type = 'NKV'
+  let type: 'NKV' | 'Dokter Hewan' = 'NKV'
   
   if (!registration) {
     const { data: dokterData } = await supabase
