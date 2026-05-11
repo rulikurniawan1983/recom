@@ -1,71 +1,79 @@
 # Sistem Permohonan Rekomendasi Veteriner Online
 
-Sistem permohonan rekomendasi online untuk Dinas Perikanan dan Peternakan Kabupaten Bogor.
+Sistem permohonan rekomendasi online untuk Dinas Perikanan dan Peternakan Kabupaten Bogor. Aplikasi ini menyediakan platform digital untuk pengajuan rekomendasi Nomor Kontrol Veteriner (NKV) dan Praktik Dokter Hewan.
 
-## Fitur
+## 🎯 Fitur Utama
 
 ### Jenis Rekomendasi
-- **Rekomendasi Nomor Kontrol Veteriner (NKV)** - Untuk pengendalian veteriner pada unit usaha
-- **Rekomendasi Praktek Dokter Hewan** - Untuk praktik dokter hewan
+- **Rekomendasi Nomor Kontrol Veteriner (NKV)** - Untuk unit usaha produk hewan (RPH, pengolahan daging, susu, telur)
+- **Rekomendasi Praktik Dokter Hewan** - Untuk klinik dan praktik dokter hewan
 
 ### Untuk Pengguna (User)
-- Registrasi akun baru
-- Login dengan email dan password
-- Membuat permohonan NKV atau Dokter Hewan
-- Tracking status permohonan secara real-time
-- Progress bar visual untuk melihat tahapan proses
+- Registrasi akun baru dengan email dan password
+- Login dengan autentikasi Supabase
+- Membuat permohonan NKV atau Praktik Dokter Hewan
+- Upload dokumen pendukung (PDF, gambar)
+- Tracking status permohonan secara real-time dengan kode tracking
+- Progress bar visual untuk melihat tahapan proses (Draft → Diajukan → Verifikasi → Lapangan → Penilaian → Selesai)
 - Unduh dokumen rekomendasi setelah disetujui
+- Notifikasi update status via tracking log
 
 ### Untuk Admin
 - Dashboard monitoring semua permohonan
-- Statistik permohonan (total, menunggu, disetujui, perlu revisi)
-- Verifikasi dokumen
-- Manajemen jadwal pemeriksaan lapangan
-- Penilaian dan persetujuan rekomendasi
+- Statistik permohonan (total, menunggu verifikasi, disetujui, ditolak, perlu revisi)
+- Filter permohonan berdasarkan status
+- Pencarian permohonan berdasarkan nomor registrasi atau nama
+- Verifikasi dokumen kelengkapan
+- Update status permohonan (verifikasi dokumen, jadwal pemeriksaan, penilaian)
+- Upload dokumen rekomendasi hasil
 
 ### Fitur Umum
-- **Tracking Permohonan Real-time** - Cek status dengan kode tracking
+- **Tracking Permohonan Real-time** - Cek status dengan kode tracking tanpa login
 - **Role-based Access Control** - Hak akses berbeda untuk admin dan user
-- **Responsive Design** - Tampilan optimal di semua perangkat
+- **Responsive Design** - Tampilan optimal di semua perangkat (desktop, tablet, mobile)
+- **Upload Dokumen** - Upload file ke storage Supabase
 
-## Tech Stack
+## 🛠️ Tech Stack
 
-- **Next.js 16** - React framework dengan Turbopack
-- **TypeScript** - Type safety
-- **Tailwind CSS** - Styling utility-first
-- **Supabase** - Backend (Database, Auth, Storage)
+- **Next.js 16** - React framework dengan Turbopack (super cepat)
+- **TypeScript** - Type safety untuk development yang lebih aman
+- **Tailwind CSS** - Styling utility-first untuk tampilan modern
+- **Supabase** - Backend as a Service (Database PostgreSQL, Auth, Storage)
+- **Lucide React** - Icon library modern
 
-## Prerequisites
+## 📋 Persyaratan Sistem
 
-- Node.js 18+
+- Node.js 18+ 
 - NPM atau Yarn
-- Akun Supabase
+- Akun Supabase (gratis)
 
-## Setup
+## 🚀 Setup Development
 
 ### 1. Buat Project Supabase
 
 1. Daftar di [Supabase](https://supabase.com)
 2. Buat project baru
-3. Catat URL dan anon key dari project settings
+3. Catat URL dan anon key dari **Project Settings → API**
 
 ### 2. Setup Environment Variables
 
-Buat file `.env.local`:
+Buat file `.env.local` di root project:
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=xxxxxxxxxxxxxxxxxxxx
+SUPABASE_SERVICE_ROLE_KEY=xxxxxxxxxxxxxxxxxxxx
 ```
+
+**Catatan:** Service Role Key diperlukan untuk membuat user admin via API.
 
 ### 3. Jalankan Migration
 
-Buka SQL Editor di Supabase Dashboard dan jalankan isi file `db/migrations.sql`.
+Buka SQL Editor di Supabase Dashboard dan jalankan isi file `db/migrations.sql`:
 
 Atau gunakan Supabase CLI:
 ```bash
-supabase db push
+supabase db push < db/migrations.sql
 ```
 
 ### 4. Setup Storage Bucket
@@ -90,9 +98,9 @@ npm run dev
 
 Buka [http://localhost:3000](http://localhost:3000)
 
-## Deployment
+## 📦 Deployment
 
-### Deploy ke Vercel
+### Deploy ke Vercel (Rekomendasi)
 
 1. Push kode ke GitHub repository
 2. Buka [Vercel](https://vercel.com)
@@ -103,65 +111,104 @@ Buka [http://localhost:3000](http://localhost:3000)
    - `SUPABASE_SERVICE_ROLE_KEY`
 5. Klik Deploy
 
-## Struktur Folder
+### Deploy Manual
+
+```bash
+npm run build
+npm start
+```
+
+## 📁 Struktur Folder
 
 ```
 src/
 ├── app/
 │   ├── admin/
-│   │   └── dashboard/       # Dashboard admin
-│   │   └── verification/    # Halaman verifikasi
+│   │   ├── dashboard/              # Dashboard admin
+│   │   │   └── page.tsx
+│   │   │   └── admin-dashboard-client.tsx
+│   │   └── verification/             # Halaman verifikasi
+│   │       ├── page.tsx
+│   │       └── dokter-hewan/        # Verifikasi dokter hewan
 │   ├── api/
-│   │   ├── admin/           # API admin (users, status)
-│   │   ├── auth/            # Auth session
-│   │   ├── registration/    # Submit permohonan
-│   │   └── tracking/[code]/ # Cek status permohonan
-│   ├── dashboard/           # Dashboard user
-│   ├── login/              # Halaman login
-│   ├── register/           # Halaman registrasi
-│   ├── nkv/register/       # Form permohonan NKV
-│   └── dokter-hewan/register/ # Form permohonan Dokter Hewan
+│   │   ├── admin/
+│   │   │   ├── users/route.ts       # Buat user admin
+│   │   │   ├── nkv/[id]/status/     # Update status NKV
+│   │   │   ├── dokter-hewan/[id]/status/
+│   │   │   └── schedules/route.ts
+│   │   ├── auth/
+│   │   │   ├── session/route.ts
+│   │   │   └── signout/route.ts
+│   │   ├── registration/route.ts    # Submit permohonan
+│   │   └── tracking/[code]/route.ts # Cek status
+│   ├── dashboard/
+│   │   ├── page.tsx
+│   │   └── dashboard-client.tsx
+│   ├── login/page.tsx
+│   ├── register/page.tsx
+│   ├── nkv/register/page.tsx
+│   ├── dokter-hewan/register/page.tsx
+│   └── setup-admin/page.tsx         # Buat admin baru
 ├── components/
-│   ├── ui/                 # Komponen UI (button, card, modal, dll)
-│   ├── registration/       # Komponen form registrasi
-│   └── tracking/          # Komponen tracking permohonan
+│   ├── ui/
+│   │   ├── button.tsx
+│   │   ├── card.tsx
+│   │   ├── input.tsx
+│   │   └── modal.tsx
+│   ├── registration/
+│   │   ├── nkv-registration-form.tsx
+│   │   ├── dokter-hewan-registration-form.tsx
+│   │   └── success-modal.tsx
+│   └── tracking/
+│       └── tracking-modal.tsx
 └── lib/
-    ├── supabase.ts         # Supabase client (browser)
-    ├── supabase-server.ts  # Supabase client (server)
-    ├── storage.ts          # Upload file ke storage
-    └── types.ts            # Type definitions
+    ├── supabase.ts                   # Client browser
+    ├── supabase-server.ts            # Client server
+    ├── storage.ts                    # Upload file
+    └── types.ts                      # Type definitions
 
 db/
-└── migrations.sql          # Schema database
+└── migrations.sql                      # Schema database
 
+public/
+└── data/                               # File pendukung
 ```
 
-## API Routes
+## 🔌 API Routes
 
-| Route | Method | Deskripsi |
-|-------|--------|-----------|
-| `/api/admin/users` | POST | Buat user admin baru |
-| `/api/tracking/[code]` | GET | Cek status permohonan |
-| `/api/registration` | POST | Submit permohonan baru |
-| `/api/admin/nkv/[id]/status` | PUT | Update status NKV |
-| `/api/admin/dokter-hewan/[id]/status` | PUT | Update status Dokter Hewan |
+| Route | Method | Auth | Deskripsi |
+|-------|--------|------|-----------|
+| `/api/admin/users` | POST | Service Key | Buat user admin baru |
+| `/api/tracking/[code]` | GET | Public | Cek status permohonan |
+| `/api/registration` | POST | User | Submit permohonan baru |
+| `/api/admin/nkv/[id]/status` | PUT | Admin | Update status NKV |
+| `/api/admin/dokter-hewan/[id]/status` | PUT | Admin | Update status Dokter Hewan |
+| `/api/auth/session` | POST | User | Simpan session |
+| `/api/auth/signout` | POST | User | Logout |
 
-## Status Permohonan
+## 📊 Status Permohonan
 
-| Status | Keterangan |
-|--------|------------|
-| `draft` | Draft (belum diajukan) |
-| `submitted` | Sudah diajukan |
-| `document_verification` | Sedang verifikasi dokumen |
-| `field_inspection` | Menunggu pemeriksaan lapangan |
-| `assessment` | Sedang dinilai |
-| `approved` | Disetujui |
-| `rejected` | Ditolak |
-| `revision_requested` | Perlu revisi |
+| Status | Keterangan | Progress |
+|--------|------------|----------|
+| `draft` | Draft (belum diajukan) | 10% |
+| `submitted` | Sudah diajukan | 25% |
+| `document_verification` | Sedang verifikasi dokumen | 50% |
+| `field_inspection` | Menunggu pemeriksaan lapangan | 70% |
+| `assessment` | Sedang dinilai | 85% |
+| `approved` | Disetujui | 100% |
+| `rejected` | Ditolak | 100% |
+| `revision_requested` | Perlu revisi | 50% |
 
-## Membuat Admin Baru
+## 👨‍💼 Membuat Admin Baru
 
-Gunakan endpoint `/api/admin/users` atau halaman `/setup-admin`:
+### Via Halaman Setup Admin
+
+Akses `/setup-admin` dan isi form:
+- Nama Lengkap
+- Email
+- Password
+
+### Via API (curl)
 
 ```bash
 curl -X POST http://localhost:3000/api/admin/users \
@@ -169,6 +216,73 @@ curl -X POST http://localhost:3000/api/admin/users \
   -d '{"email":"admin@example.com","password":"password123","fullName":"Nama Admin","role":"admin"}'
 ```
 
-## Lisensi
+### Via SQL (manual)
+
+```sql
+-- Set role user menjadi admin
+UPDATE profiles 
+SET role = 'admin' 
+WHERE email = 'admin@example.com';
+```
+
+## 🏢 Jenis Usaha yang Dapat Mengajukan
+
+### Rumah Pemotongan Hewan (RPH)
+- RPH Unggas (RPU)
+- RPH Babi
+- RPH Sapi/Ruminansia
+
+### Budidaya
+- Usaha budidaya unggas petelur
+- Usaha budidaya sapi perah
+
+### Unit Pengolahan
+- Usaha pengolahan susu
+- Usaha pengolahan daging
+- Usaha pengolahan telur
+- Usaha pengolahan madu
+
+### Distribusi/Ritel
+- Gudang pendingin (cold storage)
+- Toko/kios daging (meat shop)
+- Unit pendingin susu (milk cooling center)
+- Gudang kering
+- Tempat pengemasan/pelabelan telur
+
+### Pemasukan & Pengeluaran
+- Usaha yang melakukan impor atau ekspor produk hewan
+
+## 🎨 Screenshots
+
+### Homepage
+- Navbar dark blue dengan tombol Login dan Tracking
+- Judul "Pilih Rekomendasi"
+- Tombol NKV dan Dokter Hewan berukuran besar
+- Grid 12 jenis usaha yang dapat mengajukan
+
+### Dashboard User
+- Statistik permohonan (total, disetujui, dalam proses, revisi)
+- Timeline progres status
+- Riwayat permohonan dengan tombol unduh
+
+### Dashboard Admin
+- Statistik semua permohonan
+- Filter berdasarkan status
+- Daftar permohonan dengan tombol verifikasi
+
+## 🛠️ Troubleshooting
+
+### Error: "Service Role Key tidak valid"
+Pastikan `SUPABASE_SERVICE_ROLE_KEY` benar dan dari Project Settings → API
+
+### Error: "Migration gagal"
+Jalankan SQL migration di Supabase Dashboard secara manual
+
+### Error: "Storage upload gagal"
+Pastikan bucket `registration-documents` sudah dibuat dan public
+
+## 📄 Lisensi
 
 Proyek ini untuk keperluan internal Dinas Perikanan dan Peternakan Kabupaten Bogor.
+
+Copyright 2026 - DINAS PERIKANAN DAN PETERNAKAN KABUPATEN BOGOR
