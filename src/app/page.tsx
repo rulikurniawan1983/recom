@@ -3,10 +3,28 @@ import { Button } from '@/components/ui/button'
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-100">
-      <header className="bg-white shadow">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-100 relative overflow-hidden">
+      {/* 3D Floating Icons Background */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-20 left-10 w-16 h-16 bg-yellow-400 rounded-lg transform rotate-12 shadow-2xl opacity-80 animate-pulse"></div>
+        <div className="absolute top-40 right-20 w-12 h-12 bg-pink-400 rounded-full shadow-xl opacity-70 animate-bounce"></div>
+        <div className="absolute bottom-32 left-20 w-20 h-20 bg-blue-400 rounded-xl transform -rotate-6 shadow-2xl opacity-60"></div>
+        <div className="absolute bottom-20 right-40 w-14 h-14 bg-green-400 rounded-lg shadow-xl opacity-75 animate-pulse"></div>
+      </div>
+
+      <header className="bg-white shadow-lg relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <h1 className="text-xl font-bold text-gray-900">Rekomendasi NKV</h1>
+          <div className="flex items-center space-x-3">
+            {/* 3D Logo Icon */}
+            <div className="relative w-12 h-12 transform hover:rotate-6 transition-transform">
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-400 to-red-500 rounded-xl shadow-lg transform rotate-3"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-xl shadow-lg transform -rotate-3"></div>
+              <div className="absolute inset-0 flex items-center justify-center text-white text-xl font-bold">
+                NKV
+              </div>
+            </div>
+            <h1 className="text-xl font-bold text-gray-900">Rekomendasi NKV</h1>
+          </div>
           <div className="space-x-4">
             <Link href="/login">
               <Button variant="outline">Login</Button>
@@ -18,8 +36,19 @@ export default function HomePage() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
         <div className="text-center mb-16">
+          <div className="inline-block mb-6 relative">
+            {/* Large 3D Icon */}
+            <div className="w-32 h-32 mx-auto relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl shadow-3xl transform rotate-6 animate-pulse"></div>
+              <div className="absolute inset-2 bg-gradient-to-br from-yellow-300 to-orange-400 rounded-xl shadow-xl transform -rotate-3"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-5xl font-bold text-white drop-shadow-lg">🐄</span>
+              </div>
+            </div>
+          </div>
+          
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
             Sistem Rekomendasi NKV
           </h2>
@@ -59,8 +88,8 @@ export default function HomePage() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 mb-16">
-          <div className="bg-white rounded-lg p-6 shadow">
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+          <div className="bg-white rounded-lg p-6 shadow transform hover:scale-105 transition-transform">
+            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4 transform rotate-3">
               <span className="text-blue-600 font-bold text-xl">1</span>
             </div>
             <h3 className="font-bold text-lg mb-2">Pendaftaran Online</h3>
@@ -70,8 +99,8 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="bg-white rounded-lg p-6 shadow">
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+          <div className="bg-white rounded-lg p-6 shadow transform hover:scale-105 transition-transform">
+            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4 transform -rotate-3">
               <span className="text-green-600 font-bold text-xl">2</span>
             </div>
             <h3 className="font-bold text-lg mb-2">Verifikasi Dokumen</h3>
@@ -81,8 +110,8 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="bg-white rounded-lg p-6 shadow">
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+          <div className="bg-white rounded-lg p-6 shadow transform hover:scale-105 transition-transform">
+            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4 transform rotate-3">
               <span className="text-purple-600 font-bold text-xl">3</span>
             </div>
             <h3 className="font-bold text-lg mb-2">Pemeriksaan Lapangan</h3>
@@ -92,8 +121,8 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="bg-white rounded-lg p-6 shadow">
-            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
+          <div className="bg-white rounded-lg p-6 shadow transform hover:scale-105 transition-transform">
+            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4 transform -rotate-3">
               <span className="text-orange-600 font-bold text-xl">4</span>
             </div>
             <h3 className="font-bold text-lg mb-2">Penilaian & Rekomendasi</h3>
@@ -104,8 +133,8 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="bg-white rounded-lg p-6 shadow">
-            <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
+          <div className="bg-white rounded-lg p-6 shadow transform hover:scale-105 transition-transform">
+            <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4 transform rotate-3">
               <span className="text-indigo-600 font-bold text-xl">5</span>
             </div>
             <h3 className="font-bold text-lg mb-2">Unduh Rekomendasi</h3>
@@ -118,7 +147,7 @@ export default function HomePage() {
 
         <div className="text-center">
           <Link href="/register">
-            <Button size="lg" className="px-8">
+            <Button size="lg" className="px-8 transform hover:scale-110 transition-transform">
               Mulai Pendaftaran NKV
             </Button>
           </Link>
