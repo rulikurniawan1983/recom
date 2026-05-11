@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-100">
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <h1 className="text-xl font-bold text-gray-900">Rekomendasi NKV</h1>
@@ -24,9 +24,38 @@ export default function HomePage() {
             Sistem Rekomendasi NKV
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Layanan online untuk mendapatkan Rekomendasi NKV (Neraca Keseimbangan Vitalitas) 
-            untuk unit usaha produk hewan
+            Layanan online untuk mendapatkan Rekomendasi Nomor Kontrol Veteriner (NKV) 
+            sesuai Peraturan Menteri Pertanian No. 11 Tahun 2020
           </p>
+        </div>
+
+        <div className="bg-white rounded-lg p-8 shadow-lg mb-16">
+          <h3 className="text-2xl font-bold text-gray-900 mb-4">
+            Dasar Hukum
+          </h3>
+          <p className="text-gray-700 mb-4">
+            <strong>Peraturan Menteri Pertanian Republik Indonesia Nomor 11 Tahun 2020</strong> tentang Nomor Kontrol Veteriner ditetapkan oleh Menteri Pertanian pada tanggal 30 September 2020.
+          </p>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-2">Tujuan NKV:</h4>
+              <ul className="list-disc list-inside text-gray-600 space-y-1">
+                <li>Mengendalikan distribusi produk hewan yang bersifat vital</li>
+                <li>Mencegah penyebaran penyakit hewan</li>
+                <li>Melindungi kesehatan hewan dan kehidupan manusia</li>
+                <li>Mewujudkan tata kelola produk hewan yang baik</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-2">Produk yang dikendalikan:</h4>
+              <ul className="list-disc list-inside text-gray-600 space-y-1">
+                <li>Daging sapi, ayam, babi, dan lainnya</li>
+                <li>Telur untuks, telur ayam negeri</li>
+                <li>Susu dan produk olahannya</li>
+                <li>Terpakai dan bahan hewani lainnya</li>
+              </ul>
+            </div>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 mb-16">
@@ -90,7 +119,7 @@ export default function HomePage() {
         <div className="text-center">
           <Link href="/register">
             <Button size="lg" className="px-8">
-              Mulai Pendaftaran
+              Mulai Pendaftaran NKV
             </Button>
           </Link>
         </div>

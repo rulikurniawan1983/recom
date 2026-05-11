@@ -1,6 +1,14 @@
 -- Enable UUID extension
 create extension if not exists "uuid-ossp";
 
+-- Drop existing tables (for clean migration)
+drop table if exists registration_documents cascade;
+drop table if exists inspection_schedules cascade;
+drop table if exists nkv_registrations cascade;
+drop table if exists product_types cascade;
+drop table if exists business_units cascade;
+drop table if exists profiles cascade;
+
 -- Create profiles table for user data
 create table profiles (
   id uuid primary key references auth.users on delete cascade,
