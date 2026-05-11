@@ -1,5 +1,5 @@
 # Sistem Permohonan Rekomendasi Veteriner Online
-Ruli Kurniawan
+Ruli Kurniawan, S.Pt
 
 Sistem permohonan rekomendasi online untuk Dinas Perikanan dan Peternakan Kabupaten Bogor. Aplikasi ini menyediakan platform digital untuk pengajuan rekomendasi Nomor Kontrol Veteriner (NKV) dan Praktik Dokter Hewan.
 
