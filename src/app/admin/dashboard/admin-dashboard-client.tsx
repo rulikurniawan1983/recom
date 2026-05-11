@@ -1,18 +1,24 @@
 'use client'
 
-import { User } from '@supabase/supabase-js'
+import { Profile } from '@/lib/types'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { createClient } from '@/lib/supabase'
+import { User } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
 import { FileText, Clock, CheckCircle, XCircle, BarChart3 } from 'lucide-react'
 
-interface DashboardClientProps {
+interface AdminDashboardClientProps {
+  profile: Profile
   user: User
-  profile: any
-  nkvRegistrations: any[]
-  dokterRegistrations: any[]
+  allRegistrations: Array<{
+    id: string
+    registration_number: string
+    status: string
+    created_at: string
+    type: 'NKV' | 'Dokter Hewan'
+    full_name?: string
+  }>
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -57,18 +63,12 @@ const STEPS = [
   { key: 'approved', label: 'Selesai' }
 ]
 
-export default function DashboardClient({ user, profile, nkvRegistrations, dokterRegistrations }: DashboardClientProps) {
+export default function AdminDashboardClient({ profile, user, allRegistrations }: AdminDashboardClientProps) {
   const router = useRouter()
-  const supabase = createClient()
 
   const handleLogout = () => {
     router.push('/logout')
   }
-
-  const allRegistrations = [
-    ...nkvRegistrations.map(r => ({ ...r, type: 'NKV' })),
-    ...dokterRegistrations.map(r => ({ ...r, type: 'Dokter Hewan' }))
-  ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
   const stats = {
     total: allRegistrations.length,
@@ -103,6 +103,7 @@ export default function DashboardClient({ user, profile, nkvRegistrations, dokte
             <p className="font-semibold text-sm text-blue-900">{reg.registration_number}</p>
             <p className="text-xs text-blue-600">
               {reg.type} • {new Date(reg.created_at).toLocaleDateString('id-ID')}
+              {reg.full_name && ` • ${reg.full_name}`}
             </p>
           </div>
           <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[reg.status]}`}>
@@ -119,60 +120,44 @@ export default function DashboardClient({ user, profile, nkvRegistrations, dokte
           ></div>
         </div>
 
-        {reg.tracking_logs && reg.tracking_logs.length > 0 && (
-          <div className="text-xs text-blue-600 mb-2">
-            <strong>Update:</strong> {STATUS_LABELS[reg.tracking_logs[0].status]} - {new Date(reg.tracking_logs[0].created_at).toLocaleDateString('id-ID')}
-          </div>
-        )}
-
-        {reg.recommendation_file_url ? (
-          <a 
-            href={reg.recommendation_file_url} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="inline-flex items-center text-sm text-blue-600 hover:underline"
-          >
-            <FileText className="w-4 h-4 mr-1" />
-            Unduh Rekomendasi
-          </a>
-        ) : reg.status === 'revision_requested' ? (
-          <span className="text-sm text-red-600">Perlu revisi - Silakan cek detail</span>
-        ) : null}
+        <Link href={reg.type === 'NKV' ? '/admin/verification' : '/admin/verification/dokter-hewan'}>
+          <Button size="sm" variant="outline">Verifikasi</Button>
+        </Link>
       </CardContent>
     </Card>
   )
 
   return (
-<div className="min-h-screen bg-blue-100/80 backdrop-blur-sm">
-       <header className="bg-white/90 backdrop-blur-sm shadow-md border-b border-blue-200">
-         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-           <div>
-             <h1 className="text-xl font-bold text-blue-900">Dashboard Pengguna</h1>
-             <p className="text-sm text-blue-700">Sistem Rekomendasi Veteriner</p>
-           </div>
+    <div className="min-h-screen bg-blue-100/80 backdrop-blur-sm">
+      <header className="bg-white/90 backdrop-blur-sm shadow-md border-b border-blue-200">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+          <div>
+            <h1 className="text-xl font-bold text-blue-900">Dashboard Admin</h1>
+            <p className="text-sm text-blue-700">Sistem Rekomendasi Veteriner</p>
+          </div>
           <div className="flex items-center space-x-4">
             <span className="text-sm text-gray-600">
               {profile?.full_name || user.email}
             </span>
-<Button 
-               variant="outline" 
-               size="sm" 
-               onClick={handleLogout}
-               className="bg-red-600 text-white hover:bg-red-700 border-red-600"
-             >
-               Logout
-             </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleLogout}
+              className="bg-red-600 text-white hover:bg-red-700 border-red-600"
+            >
+              Logout
+            </Button>
           </div>
         </div>
       </header>
 
-<main className="max-w-7xl mx-auto px-4 py-6">
-         <div className="mb-6">
-           <h2 className="text-2xl font-bold text-blue-900">
-             Selamat Datang, {profile?.full_name?.split(' ')[0] || 'User'}!
-           </h2>
-           <p className="text-blue-700 mt-1">Kelola dan pantau permohonan rekomendasi Anda</p>
-         </div>
+      <main className="max-w-7xl mx-auto px-4 py-6">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-blue-900">
+            Selamat Datang, Admin {profile?.full_name?.split(' ')[0] || 'Admin'}!
+          </h2>
+          <p className="text-blue-700 mt-1">Dashboard untuk monitoring seluruh permohonan</p>
+        </div>
 
         {/* Statistics Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -222,44 +207,14 @@ export default function DashboardClient({ user, profile, nkvRegistrations, dokte
           </Card>
         </div>
 
-        {/* Action Cards */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-3 text-blue-800">Buat Permohonan Baru</h3>
-          <div className="grid md:grid-cols-2 gap-4">
-<Link href="/nkv/register">
-               <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full border-blue-200 bg-white/80 backdrop-blur-sm">
-                 <CardHeader>
-                   <CardTitle className="text-lg text-blue-800">Rekomendasi NKV</CardTitle>
-                 </CardHeader>
-                 <CardContent>
-                   <p className="text-blue-600 mb-4">Buat permohonan rekomendasi Nomor Kontrol Veteriner</p>
-                   <Button className="w-full">Buat Permohonan</Button>
-                 </CardContent>
-               </Card>
-             </Link>
-
-             <Link href="/dokter-hewan/register">
-               <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full border-blue-200 bg-white/80 backdrop-blur-sm">
-                 <CardHeader>
-                   <CardTitle className="text-lg text-blue-800">Praktek Dokter Hewan</CardTitle>
-                 </CardHeader>
-                 <CardContent>
-                   <p className="text-blue-600 mb-4">Buat permohonan rekomendasi praktik dokter hewan</p>
-                   <Button className="w-full">Buat Permohonan</Button>
-                 </CardContent>
-               </Card>
-             </Link>
-          </div>
-        </div>
-
         {/* Registration History */}
         <div>
-          <h3 className="text-lg font-semibold mb-3 text-blue-800">Riwayat Permohonan</h3>
+          <h3 className="text-lg font-semibold mb-3 text-blue-800">Semua Permohonan</h3>
           {allRegistrations.length === 0 ? (
-<Card className="border-blue-200 bg-white/80 backdrop-blur-sm shadow-sm">
-               <CardContent className="pt-6 text-center py-12">
+            <Card className="border-blue-200 bg-white/80 backdrop-blur-sm shadow-sm">
+              <CardContent className="pt-6 text-center py-12">
                 <FileText className="h-12 w-12 text-blue-300 mx-auto mb-3" />
-                <p className="text-blue-600">Belum ada permohonan. Buat permohonan baru di atas.</p>
+                <p className="text-blue-600">Belum ada permohonan</p>
               </CardContent>
             </Card>
           ) : (

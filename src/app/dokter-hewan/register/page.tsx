@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
-import NKVRegistrationForm from '@/components/registration/nkv-registration-form'
+import DokterHewanRegistrationForm from '@/components/registration/dokter-hewan-registration-form'
 
-export default async function RegistrationPage() {
+export default async function DokterHewanRegisterPage() {
   const supabase = await createClient()
 
   const {
@@ -13,5 +13,5 @@ export default async function RegistrationPage() {
     redirect('/login')
   }
 
-  return <NKVRegistrationForm />
+  return <DokterHewanRegistrationForm />
 }

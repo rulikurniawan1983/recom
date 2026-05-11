@@ -46,7 +46,6 @@ export interface NKVRegistration {
   product_type_id: string | null
   registration_number: string
   status: RegistrationStatus
-  company_documents: RegistrationDocument[]
   verification_notes: string | null
   inspector_id: string | null
   inspection_date: string | null
@@ -57,11 +56,54 @@ export interface NKVRegistration {
   created_at: string
   updated_at: string
   approved_at: string | null
+  profiles?: {
+    full_name: string | null
+    email: string
+  }
+  business_units?: {
+    name: string
+  }
+  registration_documents?: RegistrationDocument[]
+  tracking_logs?: Array<{
+    id: string
+    status: string
+    created_at: string
+  }>
+}
+
+export interface DokterHewanRegistration {
+  id: string
+  user_id: string
+  registration_number: string
+  status: RegistrationStatus
+  full_name: string
+  phone: string
+  email: string
+  clinic_address: string
+  nib_number: string | null
+  strv_number: string | null
+  verification_notes: string | null
+  inspection_notes: string | null
+  recommendation_file_url: string | null
+  created_at: string
+  updated_at: string
+  approved_at: string | null
+  profiles?: {
+    full_name: string | null
+    email: string
+  }
+  registration_documents?: RegistrationDocument[]
+  tracking_logs?: Array<{
+    id: string
+    status: string
+    created_at: string
+  }>
 }
 
 export interface RegistrationDocument {
   id: string
   registration_id: string
+  registration_type: string
   document_type: string
   file_url: string
   file_name: string
@@ -72,6 +114,7 @@ export interface RegistrationDocument {
 export interface InspectionSchedule {
   id: string
   registration_id: string
+  registration_type: string
   inspector_id: string
   scheduled_date: string
   scheduled_time: string

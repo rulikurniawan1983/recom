@@ -1,75 +1,174 @@
-# Sistem Rekomendasi NKV
+# Sistem Permohonan Rekomendasi Veteriner Online
 
-Aplikasi web Next.js untuk pendaftaran Rekomendasi NKV (Neraca Keseimbangan Vitalitas) dengan database Supabase.
+Sistem permohonan rekomendasi online untuk Dinas Perikanan dan Peternakan Kabupaten Bogor.
 
 ## Fitur
 
-- **Autentikasi**: Login admin dan user
-- **Pendaftaran Online**: Formulir pendaftaran NKV dengan 4 langkah
-- **Verifikasi Dokumen**: Admin dapat memverifikasi dokumen pendaftar
-- **Pemeriksaan Lapangan**: Jadwal pemeriksaan oleh petugas
-- **Penilaian & Rekomendasi**: Proses penilaian dan persetujuan
-- **Unduh Rekomendasi**: Download dokumen NKV yang disetujui
+### Jenis Rekomendasi
+- **Rekomendasi Nomor Kontrol Veteriner (NKV)** - Untuk pengendalian veteriner pada unit usaha
+- **Rekomendasi Praktek Dokter Hewan** - Untuk praktik dokter hewan
+
+### Untuk Pengguna (User)
+- Registrasi akun baru
+- Login dengan email dan password
+- Membuat permohonan NKV atau Dokter Hewan
+- Tracking status permohonan secara real-time
+- Progress bar visual untuk melihat tahapan proses
+- Unduh dokumen rekomendasi setelah disetujui
+
+### Untuk Admin
+- Dashboard monitoring semua permohonan
+- Statistik permohonan (total, menunggu, disetujui, perlu revisi)
+- Verifikasi dokumen
+- Manajemen jadwal pemeriksaan lapangan
+- Penilaian dan persetujuan rekomendasi
+
+### Fitur Umum
+- **Tracking Permohonan Real-time** - Cek status dengan kode tracking
+- **Role-based Access Control** - Hak akses berbeda untuk admin dan user
+- **Responsive Design** - Tampilan optimal di semua perangkat
+
+## Tech Stack
+
+- **Next.js 16** - React framework dengan Turbopack
+- **TypeScript** - Type safety
+- **Tailwind CSS** - Styling utility-first
+- **Supabase** - Backend (Database, Auth, Storage)
+
+## Prerequisites
+
+- Node.js 18+
+- NPM atau Yarn
+- Akun Supabase
 
 ## Setup
 
-### 1. Supabase Setup
+### 1. Buat Project Supabase
 
-1. Buat project di [Supabase](https://supabase.com)
-2. Jalankan migration di `db/migrations.sql`:
-   - Buka SQL Editor di Supabase Dashboard
-   - Paste dan jalankan semua query dari file migrations.sql
-3. Buat storage bucket `registration-documents` (Public)
-4. Copy URL dan anon key ke `.env.local`
+1. Daftar di [Supabase](https://supabase.com)
+2. Buat project baru
+3. Catat URL dan anon key dari project settings
 
-### 2. Environment Variables
+### 2. Setup Environment Variables
 
-Edit `.env.local`:
-```
+Buat file `.env.local`:
+
+```bash
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
-### 3. Install & Run
+### 3. Jalankan Migration
+
+Buka SQL Editor di Supabase Dashboard dan jalankan isi file `db/migrations.sql`.
+
+Atau gunakan Supabase CLI:
+```bash
+supabase db push
+```
+
+### 4. Setup Storage Bucket
+
+Buat storage bucket bernama `registration-documents` dengan akses public:
+
+1. Buka Supabase Dashboard → Storage
+2. Create bucket `registration-documents`
+3. Set sebagai public
+
+### 5. Install Dependencies
 
 ```bash
 npm install
+```
+
+### 6. Jalankan Development Server
+
+```bash
 npm run dev
 ```
 
-## Deployment ke Vercel
+Buka [http://localhost:3000](http://localhost:3000)
 
-1. Push kode ke GitHub
-2. Import project di Vercel
-3. Tambahkan environment variables di Vercel:
+## Deployment
+
+### Deploy ke Vercel
+
+1. Push kode ke GitHub repository
+2. Buka [Vercel](https://vercel.com)
+3. Import repository
+4. Tambahkan environment variables:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-4. Deploy
+   - `SUPABASE_SERVICE_ROLE_KEY`
+5. Klik Deploy
 
-## Struktur Aplikasi
+## Struktur Folder
 
 ```
 src/
 ├── app/
-│   ├── login/          # Halaman login
-│   ├── register/       # Halaman register
-│   ├── dashboard/      # Dashboard user/admin
-│   ├── registration/   # Form pendaftaran NKV
-│   └── admin/          # Halaman admin
+│   ├── admin/
+│   │   └── dashboard/       # Dashboard admin
+│   │   └── verification/    # Halaman verifikasi
+│   ├── api/
+│   │   ├── admin/           # API admin (users, status)
+│   │   ├── auth/            # Auth session
+│   │   ├── registration/    # Submit permohonan
+│   │   └── tracking/[code]/ # Cek status permohonan
+│   ├── dashboard/           # Dashboard user
+│   ├── login/              # Halaman login
+│   ├── register/           # Halaman registrasi
+│   ├── nkv/register/       # Form permohonan NKV
+│   └── dokter-hewan/register/ # Form permohonan Dokter Hewan
 ├── components/
-│   ├── ui/             # Komponen UI (Button, Card, dll)
-│   └── registration/   # Form pendaftaran
+│   ├── ui/                 # Komponen UI (button, card, modal, dll)
+│   ├── registration/       # Komponen form registrasi
+│   └── tracking/          # Komponen tracking permohonan
 └── lib/
-    ├── supabase.ts     # Client Supabase
-    ├── supabase-server.ts # Server Supabase
-    └── types.ts        # Type definitions
+    ├── supabase.ts         # Supabase client (browser)
+    ├── supabase-server.ts  # Supabase client (server)
+    ├── storage.ts          # Upload file ke storage
+    └── types.ts            # Type definitions
+
+db/
+└── migrations.sql          # Schema database
+
 ```
 
-## Workflow Pendaftaran NKV
+## API Routes
 
-1. **Pendaftaran Online**: Isi form unit usaha, produk, dokumen
-2. **Verifikasi Dokumen**: Admin verifikasi kelengkapan berkas
-3. **Pemeriksaan Lapangan**: Jadwal kunjungan ke lokasi usaha
-4. **Penilaian & Rekomendasi**: Proses penilaian dan persetujuan
-5. **Unduh Rekomendasi**: Download dokumen NKV
+| Route | Method | Deskripsi |
+|-------|--------|-----------|
+| `/api/admin/users` | POST | Buat user admin baru |
+| `/api/tracking/[code]` | GET | Cek status permohonan |
+| `/api/registration` | POST | Submit permohonan baru |
+| `/api/admin/nkv/[id]/status` | PUT | Update status NKV |
+| `/api/admin/dokter-hewan/[id]/status` | PUT | Update status Dokter Hewan |
+
+## Status Permohonan
+
+| Status | Keterangan |
+|--------|------------|
+| `draft` | Draft (belum diajukan) |
+| `submitted` | Sudah diajukan |
+| `document_verification` | Sedang verifikasi dokumen |
+| `field_inspection` | Menunggu pemeriksaan lapangan |
+| `assessment` | Sedang dinilai |
+| `approved` | Disetujui |
+| `rejected` | Ditolak |
+| `revision_requested` | Perlu revisi |
+
+## Membuat Admin Baru
+
+Gunakan endpoint `/api/admin/users` atau halaman `/setup-admin`:
+
+```bash
+curl -X POST http://localhost:3000/api/admin/users \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@example.com","password":"password123","fullName":"Nama Admin","role":"admin"}'
+```
+
+## Lisensi
+
+Proyek ini untuk keperluan internal Dinas Perikanan dan Peternakan Kabupaten Bogor.
