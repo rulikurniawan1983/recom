@@ -34,3 +34,32 @@ export const uploadDocument = async (
 
   return urlData.publicUrl
 }
+
+export const uploadRegistrationDocument = async (
+  file: File,
+  registrationId: string,
+  documentType: string
+): Promise<string | null> => {
+  if (!file) return null
+
+  const fileExt = file.name.split('.').pop()
+  const fileName = `registrations/${registrationId}/${documentType}.${fileExt}`
+
+  const { data, error } = await supabase.storage
+    .from('registration-documents')
+    .upload(fileName, file, {
+      contentType: file.type,
+      upsert: false // Set to true if you want to replace existing files
+    })
+
+  if (error) {
+    console.error('Upload error:', error)
+    return null
+  }
+
+  const { data: urlData } = supabase.storage
+    .from('registration-documents')
+    .getPublicUrl(data.path)
+
+  return urlData.publicUrl
+}

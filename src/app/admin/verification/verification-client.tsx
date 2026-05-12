@@ -14,7 +14,7 @@ interface AdminVerificationClientProps {
     profiles?: { full_name: string | null; email: string }
     business_units?: { name: string }
     created_at: string
-    registration_documents?: Array<{ id: string; document_type: string; file_name: string }>
+    registration_documents?: Array<{ id: string; document_type: string; file_name: string; file_url: string }>
   }>
 }
 
@@ -104,16 +104,35 @@ export default function AdminVerificationClient({ registrations }: AdminVerifica
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  <p><strong>Email:</strong> {reg.profiles?.email}</p>
-                  <p><strong>Tanggal Daftar:</strong> {new Date(reg.created_at).toLocaleDateString('id-ID')}</p>
-                  <p><strong>Dokumen:</strong></p>
-                  <ul className="list-disc list-inside ml-4">
-                    {reg.registration_documents?.map((doc) => (
-                      <li key={doc.id}>{doc.document_type} - {doc.file_name}</li>
-                    ))}
-                  </ul>
-                </div>
+                 <div className="space-y-2">
+                   <p><strong>Email:</strong> {reg.profiles?.email}</p>
+                   <p><strong>Tanggal Daftar:</strong> {new Date(reg.created_at).toLocaleDateString('id-ID')}</p>
+                   <p><strong>Dokumen:</strong></p>
+                    <ul className="list-disc list-inside ml-4">
+                      {reg.registration_documents?.map((doc) => (
+                        <li key={doc.id}>
+                          {doc.document_type} - 
+                          <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                            {doc.file_name}
+                          </a>
+                          <button 
+                            onClick={() => {
+                              if (doc.file_url) {
+                                const printWindow = window.open(doc.file_url, '_blank');
+                                if (printWindow) {
+                                  printWindow.focus();
+                                  printWindow.print();
+                                }
+                              }
+                            }}
+                            className="text-blue-600 hover:underline text-xs ml-2"
+                          >
+                            Cetak PDF
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                 </div>
                 <div className="mt-4 flex space-x-2">
                   <Button onClick={() => setSelectedReg(reg)}>
                     Verifikasi

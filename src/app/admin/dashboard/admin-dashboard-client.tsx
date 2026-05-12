@@ -18,6 +18,11 @@ interface AdminDashboardClientProps {
     created_at: string
     type: 'NKV' | 'Dokter Hewan'
     full_name?: string
+    recommendation_file_url?: string | null
+    color_photo_url?: string | null
+    diploma_url?: string | null
+    competency_cert_url?: string | null
+    professional_recommendation_url?: string | null
   }>
 }
 
@@ -95,37 +100,154 @@ export default function AdminDashboardClient({ profile, user, allRegistrations }
     )
   }
 
-  const RegistrationCard = ({ reg }: { reg: any }) => (
-    <Card className="mb-4 border-blue-200 bg-white/80 backdrop-blur-sm shadow-sm">
-      <CardContent className="pt-4">
-        <div className="flex justify-between items-start mb-3">
-          <div>
-            <p className="font-semibold text-sm text-blue-900">{reg.registration_number}</p>
-            <p className="text-xs text-blue-600">
-              {reg.type} • {new Date(reg.created_at).toLocaleDateString('id-ID')}
-              {reg.full_name && ` • ${reg.full_name}`}
-            </p>
-          </div>
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[reg.status]}`}>
-            {STATUS_LABELS[reg.status]}
-          </span>
-        </div>
+   const RegistrationCard = ({ reg }: { reg: any }) => (
+     <Card className="mb-4 border-blue-200 bg-white/80 backdrop-blur-sm shadow-sm">
+       <CardContent className="pt-4">
+         <div className="flex justify-between items-start mb-3">
+           <div>
+             <p className="font-semibold text-sm text-blue-900">{reg.registration_number}</p>
+             <p className="text-xs text-blue-600">
+               {reg.type} • {new Date(reg.created_at).toLocaleDateString('id-ID')}
+               {reg.full_name && ` • ${reg.full_name}`}
+             </p>
+           </div>
+           <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[reg.status]}`}>
+             {STATUS_LABELS[reg.status]}
+           </span>
+         </div>
 
-        <RenderTimeline status={reg.status} />
+         <RenderTimeline status={reg.status} />
 
-        <div className="w-full bg-blue-200 rounded-full h-2 mb-3">
-          <div 
-            className="bg-blue-600 h-2 rounded-full transition-all" 
-            style={{ width: `${STATUS_PROGRESS[reg.status] || 0}%` }}
-          ></div>
-        </div>
+         <div className="w-full bg-blue-200 rounded-full h-2 mb-3">
+           <div 
+             className="bg-blue-600 h-2 rounded-full transition-all" 
+             style={{ width: `${STATUS_PROGRESS[reg.status] || 0}%` }}
+           ></div>
+         </div>
 
-        <Link href={reg.type === 'NKV' ? '/admin/verification' : '/admin/verification/dokter-hewan'}>
-          <Button size="sm" variant="outline">Verifikasi</Button>
-        </Link>
-      </CardContent>
-    </Card>
-  )
+          {/* Document preview section */}
+          {reg.type === 'NKV' && reg.recommendation_file_url && (
+            <div className="mt-2">
+              <p className="text-xs text-blue-600 mb-1 flex items-center gap-2">
+                <a href={reg.recommendation_file_url} target="_blank" rel="noopener noreferrer" className="underline">
+                  Lihat Rekomendasi
+                </a>
+                <button 
+                  onClick={() => {
+                    if (reg.recommendation_file_url) {
+                      const printWindow = window.open(reg.recommendation_file_url, '_blank');
+                      if (printWindow) {
+                        printWindow.focus();
+                        printWindow.print();
+                      }
+                    }
+                  }}
+                  className="text-xs text-blue-600 hover:underline"
+                >
+                  Cetak PDF
+                </button>
+              </p>
+            </div>
+          )}
+         
+          {reg.type === 'Dokter Hewan' && (
+            <div className="mt-2 space-y-1">
+              <p className="text-xs text-blue-600 font-medium mb-1">Dokumen:</p>
+              <div className="space-y-0.5">
+                {reg.color_photo_url && (
+                  <p className="text-xs flex items-center gap-2">
+                    <a href={reg.color_photo_url} target="_blank" rel="noopener noreferrer" className="underline">
+                      Pas Photo
+                    </a>
+                    <button 
+                      onClick={() => {
+                        if (reg.color_photo_url) {
+                          const printWindow = window.open(reg.color_photo_url, '_blank');
+                          if (printWindow) {
+                            printWindow.focus();
+                            printWindow.print();
+                          }
+                        }
+                      }}
+                      className="text-xs text-blue-600 hover:underline"
+                    >
+                      Cetak PDF
+                    </button>
+                  </p>
+                )}
+                {reg.diploma_url && (
+                  <p className="text-xs flex items-center gap-2">
+                    <a href={reg.diploma_url} target="_blank" rel="noopener noreferrer" className="underline">
+                      Ijazah
+                    </a>
+                    <button 
+                      onClick={() => {
+                        if (reg.diploma_url) {
+                          const printWindow = window.open(reg.diploma_url, '_blank');
+                          if (printWindow) {
+                            printWindow.focus();
+                            printWindow.print();
+                          }
+                        }
+                      }}
+                      className="text-xs text-blue-600 hover:underline"
+                    >
+                      Cetak PDF
+                    </button>
+                  </p>
+                )}
+                {reg.competency_cert_url && (
+                  <p className="text-xs flex items-center gap-2">
+                    <a href={reg.competency_cert_url} target="_blank" rel="noopener noreferrer" className="underline">
+                      Sertifikat Kompetensi
+                    </a>
+                    <button 
+                      onClick={() => {
+                        if (reg.competency_cert_url) {
+                          const printWindow = window.open(reg.competency_cert_url, '_blank');
+                          if (printWindow) {
+                            printWindow.focus();
+                            printWindow.print();
+                          }
+                        }
+                      }}
+                      className="text-xs text-blue-600 hover:underline"
+                    >
+                      Cetak PDF
+                    </button>
+                  </p>
+                )}
+                {reg.professional_recommendation_url && (
+                  <p className="text-xs flex items-center gap-2">
+                    <a href={reg.professional_recommendation_url} target="_blank" rel="noopener noreferrer" className="underline">
+                      Rekomendasi Profesional
+                    </a>
+                    <button 
+                      onClick={() => {
+                        if (reg.professional_recommendation_url) {
+                          const printWindow = window.open(reg.professional_recommendation_url, '_blank');
+                          if (printWindow) {
+                            printWindow.focus();
+                            printWindow.print();
+                          }
+                        }
+                      }}
+                      className="text-xs text-blue-600 hover:underline"
+                    >
+                      Cetak PDF
+                    </button>
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+         <Link href={reg.type === 'NKV' ? '/admin/verification' : '/admin/verification/dokter-hewan'}>
+           <Button size="sm" variant="outline">Verifikasi</Button>
+         </Link>
+       </CardContent>
+     </Card>
+   )
 
   return (
     <div className="min-h-screen bg-blue-100/80 backdrop-blur-sm">

@@ -16,6 +16,10 @@ interface AdminDokterVerificationClientProps {
     clinic_address: string
     nib_number: string | null
     strv_number: string | null
+    color_photo_url: string | null
+    diploma_url: string | null
+    competency_cert_url: string | null
+    professional_recommendation_url: string | null
     created_at: string
   }>
 }
@@ -69,14 +73,77 @@ export default function AdminDokterVerificationClient({ registrations }: AdminDo
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  <p><strong>Nama:</strong> {reg.full_name}</p>
-                  <p><strong>No. Telepon:</strong> {reg.phone}</p>
-                  <p><strong>Alamat Klinik:</strong> {reg.clinic_address}</p>
-                  <p><strong>NIB:</strong> {reg.nib_number || '-'}</p>
-                  <p><strong>STRV:</strong> {reg.strv_number || '-'}</p>
-                  <p><strong>Tanggal Daftar:</strong> {new Date(reg.created_at).toLocaleDateString('id-ID')}</p>
-                </div>
+                 <div className="space-y-2">
+                   <p><strong>Nama:</strong> {reg.full_name}</p>
+                   <p><strong>No. Telepon:</strong> {reg.phone}</p>
+                   <p><strong>Alamat Klinik:</strong> {reg.clinic_address}</p>
+                   <p><strong>NIB:</strong> {reg.nib_number || '-'}</p>
+                   <p><strong>STRV:</strong> {reg.strv_number || '-'}</p>
+                   <p><strong>Tanggal Daftar:</strong> {new Date(reg.created_at).toLocaleDateString('id-ID')}</p>
+                   <p><strong>Dokumen yang Diunggah:</strong></p>
+                   <ul className="list-disc list-inside ml-4">
+                      {reg.color_photo_url && (
+                        <li key="color-photo">
+                          Pas Photo: 
+                          <a href={reg.color_photo_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                            Lihat Dokumen
+                          </a>
+                          <button 
+                            onClick={() => {
+                              if (reg.color_photo_url) {
+                                const printWindow = window.open(reg.color_photo_url, '_blank');
+                                if (printWindow) {
+                                  printWindow.focus();
+                                  printWindow.print();
+                                }
+                              }
+                            }}
+                            className="text-blue-600 hover:underline text-xs ml-2"
+                          >
+                            Cetak PDF
+                          </button>
+                        </li>
+                      )}
+                      {reg.diploma_url && (
+                        <li key="diploma">
+                          Ijazah: 
+                          <a href={reg.diploma_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                            Lihat Dokumen
+                          </a>
+                          <button 
+                            onClick={() => {
+                              if (reg.diploma_url) {
+                                const printWindow = window.open(reg.diploma_url, '_blank');
+                                if (printWindow) {
+                                  printWindow.focus();
+                                  printWindow.print();
+                                }
+                              }
+                            }}
+                            className="text-blue-600 hover:underline text-xs ml-2"
+                          >
+                            Cetak PDF
+                          </button>
+                        </li>
+                      )}
+                     {reg.competency_cert_url && (
+                       <li key="competency-cert">
+                         Sertifikat Kompetensi: 
+                         <a href={reg.competency_cert_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                           Lihat Dokumen
+                         </a>
+                       </li>
+                     )}
+                     {reg.professional_recommendation_url && (
+                       <li key="professional-recommendation">
+                         Rekomendasi Profesional: 
+                         <a href={reg.professional_recommendation_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                           Lihat Dokumen
+                         </a>
+                       </li>
+                     )}
+                   </ul>
+                 </div>
                 <div className="mt-4 flex space-x-2">
                   <Button onClick={() => setSelectedReg(reg)}>
                     Verifikasi

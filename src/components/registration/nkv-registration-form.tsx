@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { validateFileSize, MAX_FILE_SIZE } from '@/lib/storage'
+import { uploadRegistrationDocument, validateFileSize, MAX_FILE_SIZE } from '@/lib/storage'
 import SuccessModal from './success-modal'
 
 interface NKVFormData {
@@ -24,6 +24,12 @@ interface NKVFormData {
     vetCertificate: File | null
     sanitaryCert: File | null
     otherDocs: File | null
+  }
+  documentUrls: {
+    businessLicense: string | null
+    vetCertificate: string | null
+    sanitaryCert: string | null
+    otherDocs: string | null
   }
 }
 
@@ -46,8 +52,34 @@ export default function NKVRegistrationForm() {
       sanitaryCert: null,
       otherDocs: null,
     },
+    documentUrls: {
+      businessLicense: null,
+      vetCertificate: null,
+      sanitaryCert: null,
+      otherDocs: null,
+    },
   })
   const router = useRouter()
+
+  const handleFileChange = (type: keyof NKVFormData['documents'], e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file && !validateFileSize(file)) {
+      setError('Ukuran file melebihi 1MB')
+      e.target.value = ''
+      return
+    }
+    setFormData({
+      ...formData, 
+      documents: {
+        ...formData.documents,
+        [type]: file || null
+      },
+      documentUrls: {
+        ...formData.documentUrls,
+        [type]: null
+      }
+    })
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -67,7 +99,10 @@ export default function NKVRegistrationForm() {
       const random = Math.random().toString(36).substr(2, 6).toUpperCase()
       const regNumber = `NKV-${year}-${random}`
       
-      // Save to Supabase
+      // Upload documents and get URLs
+      const documentUrls = await uploadDocuments(formData.documents, regNumber)
+      
+      // Save to Supabase with document URLs
       const { error: submitError } = await supabase
         .from('nkv_registrations')
         .insert({
@@ -80,6 +115,7 @@ export default function NKVRegistrationForm() {
           business_type: formData.businessType,
           product_type: formData.productId,
           product_description: formData.productDescription,
+          recommendation_file_url: documentUrls.businessLicense, // For now, using business license as recommendation
           status: 'submitted',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -98,6 +134,53 @@ export default function NKVRegistrationForm() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const uploadDocuments = async (
+    documents: NKVFormData['documents'],
+    regNumber: string
+  ) => {
+    const urls: Record<string, string | null> = {
+      businessLicense: null,
+      vetCertificate: null,
+      sanitaryCert: null,
+      otherDocs: null
+    }
+
+    // Upload each document if it exists
+    if (documents.businessLicense) {
+      urls.businessLicense = await uploadRegistrationDocument(
+        documents.businessLicense,
+        regNumber,
+        'business-license'
+      ) || null
+    }
+
+    if (documents.vetCertificate) {
+      urls.vetCertificate = await uploadRegistrationDocument(
+        documents.vetCertificate,
+        regNumber,
+        'vet-certificate'
+      ) || null
+    }
+
+    if (documents.sanitaryCert) {
+      urls.sanitaryCert = await uploadRegistrationDocument(
+        documents.sanitaryCert,
+        regNumber,
+        'sanitary-cert'
+      ) || null
+    }
+
+    if (documents.otherDocs) {
+      urls.otherDocs = await uploadRegistrationDocument(
+        documents.otherDocs,
+        regNumber,
+        'other-docs'
+      ) || null
+    }
+
+    return urls
   }
 
   return (
@@ -254,18 +337,7 @@ export default function NKVRegistrationForm() {
                   id="businessLicense" 
                   type="file" 
                   accept=".pdf" 
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file && !validateFileSize(file)) {
-                      setError('Ukuran file melebihi 1MB')
-                      e.target.value = ''
-                      return
-                    }
-                    setFormData({
-                      ...formData, 
-                      documents: {...formData.documents, businessLicense: file || null}
-                    })
-                  }}
+                  onChange={(e) => handleFileChange('businessLicense', e)}
                 />
               </div>
               <div className="space-y-2">
@@ -277,18 +349,7 @@ export default function NKVRegistrationForm() {
                   id="vetCertificate" 
                   type="file" 
                   accept=".pdf" 
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file && !validateFileSize(file)) {
-                      setError('Ukuran file melebihi 1MB')
-                      e.target.value = ''
-                      return
-                    }
-                    setFormData({
-                      ...formData, 
-                      documents: {...formData.documents, vetCertificate: file || null}
-                    })
-                  }}
+                  onChange={(e) => handleFileChange('vetCertificate', e)}
                 />
               </div>
               <div className="space-y-2">
@@ -300,18 +361,7 @@ export default function NKVRegistrationForm() {
                   id="sanitaryCert" 
                   type="file" 
                   accept=".pdf" 
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file && !validateFileSize(file)) {
-                      setError('Ukuran file melebihi 1MB')
-                      e.target.value = ''
-                      return
-                    }
-                    setFormData({
-                      ...formData, 
-                      documents: {...formData.documents, sanitaryCert: file || null}
-                    })
-                  }}
+                  onChange={(e) => handleFileChange('sanitaryCert', e)}
                 />
               </div>
               <div className="space-y-2">
@@ -323,18 +373,7 @@ export default function NKVRegistrationForm() {
                   id="otherDocs" 
                   type="file" 
                   accept=".pdf" 
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file && !validateFileSize(file)) {
-                      setError('Ukuran file melebihi 1MB')
-                      e.target.value = ''
-                      return
-                    }
-                    setFormData({
-                      ...formData, 
-                      documents: {...formData.documents, otherDocs: file || null}
-                    })
-                  }}
+                  onChange={(e) => handleFileChange('otherDocs', e)}
                 />
               </div>
             </CardContent>

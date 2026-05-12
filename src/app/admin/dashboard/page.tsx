@@ -30,17 +30,26 @@ export default async function AdminDashboardPage() {
     redirect('/dashboard')
   }
 
-  // Fetch all registrations using service role client to bypass RLS
-  const [nkvResult, dokterResult] = await Promise.all([
-    serviceSupabase
-      .from('nkv_registrations')
-      .select('*')
-      .order('created_at', { ascending: false }),
-    serviceSupabase
-      .from('dokter_hewan_registrations')
-      .select('*')
-      .order('created_at', { ascending: false }),
-  ])
+   // Fetch all registrations using service role client to bypass RLS
+   const [nkvResult, dokterResult] = await Promise.all([
+     serviceSupabase
+       .from('nkv_registrations')
+       .select(`
+         *,
+         recommendation_file_url
+       `)
+       .order('created_at', { ascending: false }),
+     serviceSupabase
+       .from('dokter_hewan_registrations')
+       .select(`
+         *,
+         color_photo_url,
+         diploma_url,
+         competency_cert_url,
+         professional_recommendation_url
+       `)
+       .order('created_at', { ascending: false }),
+   ])
 
   if (nkvResult.error) {
     console.error('Error fetching NKV registrations:', nkvResult.error)

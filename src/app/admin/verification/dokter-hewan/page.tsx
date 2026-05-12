@@ -23,14 +23,18 @@ export default async function AdminDokterVerificationPage() {
     redirect('/dashboard')
   }
 
-  const { data: registrations } = await supabase
-    .from('dokter_hewan_registrations')
-    .select(`
-      *,
-      profiles(full_name, email)
-    `)
-    .eq('status', 'submitted')
-    .order('created_at', { ascending: false })
+   const { data: registrations } = await supabase
+     .from('dokter_hewan_registrations')
+     .select(`
+       *,
+       profiles(full_name, email),
+       color_photo_url,
+       diploma_url,
+       competency_cert_url,
+       professional_recommendation_url
+     `)
+     .eq('status', 'submitted')
+     .order('created_at', { ascending: false })
 
   return <AdminDokterVerificationClient registrations={registrations || []} />
 }

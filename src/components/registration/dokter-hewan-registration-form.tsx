@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { validateFileSize, MAX_FILE_SIZE } from '@/lib/storage'
+import { validateFileSize, MAX_FILE_SIZE, uploadRegistrationDocument } from '@/lib/storage'
 import SuccessModal from './success-modal'
 
 interface DokterHewanFormData {
@@ -23,6 +23,12 @@ interface DokterHewanFormData {
     diploma: File | null
     competencyCert: File | null
     professionalRecommendation: File | null
+  }
+  documentUrls: {
+    colorPhoto: string | null
+    diploma: string | null
+    competencyCert: string | null
+    professionalRecommendation: string | null
   }
 }
 
@@ -44,55 +50,117 @@ export default function DokterHewanRegistrationForm() {
       competencyCert: null,
       professionalRecommendation: null,
     },
+    documentUrls: {
+      colorPhoto: null,
+      diploma: null,
+      competencyCert: null,
+      professionalRecommendation: null,
+    },
   })
   const router = useRouter()
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        router.push('/login')
-        return
-      }
-
-      // Generate tracking code
-      const year = new Date().getFullYear()
-      const random = Math.random().toString(36).substr(2, 6).toUpperCase()
-      const regNumber = `DKH-${year}-${random}`
-      
-       // Save to Supabase
+   const handleSubmit = async (e: React.FormEvent) => {
+     e.preventDefault()
+     setLoading(true)
+     setError(null)
+ 
+     try {
+       const { data: { user } } = await supabase.auth.getUser()
+       
+       if (!user) {
+         router.push('/login')
+         return
+       }
+ 
+       // Generate tracking code
+       const year = new Date().getFullYear()
+       const random = Math.random().toString(36).substr(2, 6).toUpperCase()
+       const regNumber = `DKH-${year}-${random}`
+       
+       // Upload documents and get URLs
+       const documentUrls = await uploadDocuments(formData.documents, regNumber)
+       
+       // Save to Supabase with document URLs
        const { error: submitError } = await supabase
          .from('dokter_hewan_registrations')
          .insert({
            user_id: user.id,
            registration_number: regNumber,
            full_name: formData.fullName,
+           birth_place_date: formData.birthPlaceDate,
+           ktp_address: formData.ktpAddress,
            clinic_address: formData.clinicAddress,
            phone: formData.phone,
            email: formData.email,
+           color_photo_url: documentUrls.colorPhoto,
+           diploma_url: documentUrls.diploma,
+           competency_cert_url: documentUrls.competencyCert,
+           professional_recommendation_url: documentUrls.professionalRecommendation,
            status: 'submitted',
            created_at: new Date().toISOString(),
            updated_at: new Date().toISOString(),
          })
+ 
+       if (submitError) throw submitError
+ 
+       setTrackingCode(regNumber)
+       setShowSuccess(true)
+     } catch (err) {
+       console.error('Registration error:', err)
+       const errorMessage = err && typeof err === 'object' && 'message' in err 
+         ? String((err as { message?: string }).message) 
+         : 'Gagal menyimpan pendaftaran'
+       setError(errorMessage)
+     } finally {
+       setLoading(false)
+     }
+   }
 
-      if (submitError) throw submitError
-
-      setTrackingCode(regNumber)
-      setShowSuccess(true)
-    } catch (err) {
-      console.error('Registration error:', err)
-      const errorMessage = err && typeof err === 'object' && 'message' in err 
-        ? String((err as { message?: string }).message) 
-        : 'Gagal menyimpan pendaftaran'
-      setError(errorMessage)
-    } finally {
-      setLoading(false)
+  const uploadDocuments = async (
+    documents: DokterHewanFormData['documents'],
+    regNumber: string
+  ) => {
+    const urls: Record<string, string | null> = {
+      colorPhoto: null,
+      diploma: null,
+      competencyCert: null,
+      professionalRecommendation: null
     }
+
+    // Upload each document if it exists
+    if (documents.colorPhoto) {
+      urls.colorPhoto = await uploadRegistrationDocument(
+        documents.colorPhoto,
+        regNumber,
+        'color-photo'
+      ) || null
+    }
+
+    if (documents.diploma) {
+      urls.diploma = await uploadRegistrationDocument(
+        documents.diploma,
+        regNumber,
+        'diploma'
+      ) || null
+    }
+
+    if (documents.competencyCert) {
+      urls.competencyCert = await uploadRegistrationDocument(
+        documents.competencyCert,
+        regNumber,
+        'competency-cert'
+      ) || null
+    }
+
+    if (documents.professionalRecommendation) {
+      urls.professionalRecommendation = await uploadRegistrationDocument(
+        documents.professionalRecommendation,
+        regNumber,
+        'professional-recommendation'
+      ) || null
+    }
+
+    return urls
   }
 
   return (
@@ -212,7 +280,8 @@ export default function DokterHewanRegistrationForm() {
                     }
                     setFormData({
                       ...formData, 
-                      documents: {...formData.documents, colorPhoto: file || null}
+                      documents: {...formData.documents, colorPhoto: file || null},
+                      documentUrls: {...formData.documentUrls, colorPhoto: null} // Reset URL when file changes
                     })
                   }}
                 />
@@ -232,7 +301,8 @@ export default function DokterHewanRegistrationForm() {
                     }
                     setFormData({
                       ...formData, 
-                      documents: {...formData.documents, diploma: file || null}
+                      documents: {...formData.documents, diploma: file || null},
+                      documentUrls: {...formData.documentUrls, diploma: null} // Reset URL when file changes
                     })
                   }}
                 />
@@ -252,7 +322,8 @@ export default function DokterHewanRegistrationForm() {
                     }
                     setFormData({
                       ...formData, 
-                      documents: {...formData.documents, competencyCert: file || null}
+                      documents: {...formData.documents, competencyCert: file || null},
+                      documentUrls: {...formData.documentUrls, competencyCert: null} // Reset URL when file changes
                     })
                   }}
                 />
@@ -272,7 +343,8 @@ export default function DokterHewanRegistrationForm() {
                     }
                     setFormData({
                       ...formData, 
-                      documents: {...formData.documents, professionalRecommendation: file || null}
+                      documents: {...formData.documents, professionalRecommendation: file || null},
+                      documentUrls: {...formData.documentUrls, professionalRecommendation: null} // Reset URL when file changes
                     })
                   }}
                 />
