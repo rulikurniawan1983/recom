@@ -13,7 +13,8 @@ import SuccessModal from './success-modal'
 
 interface DokterHewanFormData {
   fullName: string
-  birthPlaceDate: string
+  birthPlace: string
+  birthDate: string
   ktpAddress: string
   clinicAddress: string
   phone: string
@@ -39,7 +40,8 @@ export default function DokterHewanRegistrationForm() {
   const [trackingCode, setTrackingCode] = useState('')
   const [formData, setFormData] = useState<DokterHewanFormData>({
     fullName: '',
-    birthPlaceDate: '',
+    birthPlace: '',
+    birthDate: '',
     ktpAddress: '',
     clinicAddress: '',
     phone: '',
@@ -60,48 +62,55 @@ export default function DokterHewanRegistrationForm() {
   const router = useRouter()
 
    const handleSubmit = async (e: React.FormEvent) => {
-     e.preventDefault()
-     setLoading(true)
-     setError(null)
+      e.preventDefault()
+      setLoading(true)
+      setError(null)
 
-     try {
-       const { data: { user } } = await supabase.auth.getUser()
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
 
-       if (!user) {
-         router.push('/login')
-         return
-       }
+        if (!user) {
+          router.push('/login')
+          return
+        }
 
-       // Generate tracking code
-       const year = new Date().getFullYear()
-       const random = Math.random().toString(36).substr(2, 6).toUpperCase()
-       const regNumber = `DKH-${year}-${random}`
+        // Format birth place and date
+        const birthPlaceDate = formData.birthDate 
+          ? formData.birthPlace 
+            ? `${formData.birthPlace}, ${new Date(formData.birthDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`
+            : new Date(formData.birthDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+          : formData.birthPlace
 
-       // Upload documents and get URLs
-       const documentUrls = await uploadDocuments(formData.documents, regNumber)
+        // Generate tracking code
+        const year = new Date().getFullYear()
+        const random = Math.random().toString(36).substr(2, 6).toUpperCase()
+        const regNumber = `DKH-${year}-${random}`
 
-       // Save to Supabase with document URLs
-       const { data: registration, error: submitError } = await supabase
-         .from('dokter_hewan_registrations')
-         .insert({
-           user_id: user.id,
-           registration_number: regNumber,
-           full_name: formData.fullName,
-           birth_place_date: formData.birthPlaceDate,
-           ktp_address: formData.ktpAddress,
-           clinic_address: formData.clinicAddress,
-           phone: formData.phone,
-           email: formData.email,
-           color_photo_url: documentUrls.colorPhoto,
-           diploma_url: documentUrls.diploma,
-           competency_cert_url: documentUrls.competencyCert,
-           professional_recommendation_url: documentUrls.professionalRecommendation,
-           status: 'submitted',
-           created_at: new Date().toISOString(),
-           updated_at: new Date().toISOString(),
-         })
-         .select()
-         .single()
+        // Upload documents and get URLs
+        const documentUrls = await uploadDocuments(formData.documents, regNumber)
+
+        // Save to Supabase with document URLs
+        const { data: registration, error: submitError } = await supabase
+          .from('dokter_hewan_registrations')
+          .insert({
+            user_id: user.id,
+            registration_number: regNumber,
+            full_name: formData.fullName,
+            birth_place_date: birthPlaceDate,
+            ktp_address: formData.ktpAddress,
+            clinic_address: formData.clinicAddress,
+            phone: formData.phone,
+            email: formData.email,
+            color_photo_url: documentUrls.colorPhoto,
+            diploma_url: documentUrls.diploma,
+            competency_cert_url: documentUrls.competencyCert,
+            professional_recommendation_url: documentUrls.professionalRecommendation,
+            status: 'submitted',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .select()
+          .single()
 
        if (submitError) throw submitError
 
@@ -239,12 +248,22 @@ export default function DokterHewanRegistrationForm() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="birthPlaceDate">Tempat Tanggal Lahir</Label>
+                <Label htmlFor="birthPlace">Tempat Lahir</Label>
                 <Input 
-                  id="birthPlaceDate" 
-                  placeholder="Jakarta, 1 Januari 1990" 
-                  value={formData.birthPlaceDate}
-                  onChange={(e) => setFormData({...formData, birthPlaceDate: e.target.value})}
+                  id="birthPlace" 
+                  placeholder="Contoh: Jakarta" 
+                  value={formData.birthPlace}
+                  onChange={(e) => setFormData({...formData, birthPlace: e.target.value})}
+                  required 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="birthDate">Tanggal Lahir</Label>
+                <Input 
+                  id="birthDate" 
+                  type="date"
+                  value={formData.birthDate}
+                  onChange={(e) => setFormData({...formData, birthDate: e.target.value})}
                   required 
                 />
               </div>

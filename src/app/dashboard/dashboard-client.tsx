@@ -10,14 +10,14 @@ import {
   CheckCircle, 
   Plus, 
   Search, 
-  MoreVertical,
   Edit,
   Trash2,
   Eye,
   Download,
   Activity,
   Menu,
-  X
+  X,
+  MoreVertical
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -429,47 +429,52 @@ export default function DashboardClient({ user, profile, nkvRegistrations, dokte
                               {getStatusBadge(reg.status)}
                             </TableCell>
                             <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setSelectedRegistration(reg)}>
-                              <Eye className="h-4 w-4 mr-2" />
-                              Lihat Detail
-                            </DropdownMenuItem>
-                            {(reg.status === 'draft' || reg.status === 'submitted') && (
-                              <>
-                                <DropdownMenuItem onClick={() => setSelectedRegistration(reg)}>
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Edit Permohonan
-                                </DropdownMenuItem>
-                                {reg.status === 'draft' && (
-                                  <DropdownMenuItem 
-                                    onClick={() => setSelectedRegistration(reg)}
-                                    className="text-red-600"
-                                  >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Hapus Permohonan
-                                  </DropdownMenuItem>
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setSelectedRegistration(reg)}
+                                  className="h-8"
+                                >
+                                  <Eye className="h-3 w-3 mr-1" />
+                                  Detail
+                                </Button>
+                                {(reg.status === 'draft' || reg.status === 'submitted') && (
+                                  <>
+                                    <Button
+                                      variant="default"
+                                      size="sm"
+                                      onClick={() => setSelectedRegistration(reg)}
+                                      className="h-8"
+                                    >
+                                      <Edit className="h-3 w-3 mr-1" />
+                                      Edit
+                                    </Button>
+                                    {reg.status === 'draft' && (
+                                      <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={() => setSelectedRegistration(reg)}
+                                        className="h-8"
+                                      >
+                                        <Trash2 className="h-3 w-3 mr-1" />
+                                        Hapus
+                                      </Button>
+                                    )}
+                                  </>
                                 )}
-                              </>
-                             )}
-                             {reg.recommendation_file_url && reg.status === 'approved' && (
-                               <div
-                                 onClick={() => {
-                                   window.open(reg.recommendation_file_url!, '_blank', 'noopener,noreferrer');
-                                 }}
-                                 className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer flex items-center"
-                               >
-                                 <Download className="h-4 w-4 mr-2" />
-                                 Unduh Rekomendasi
-                               </div>
-                             )}
-                           </DropdownMenuContent>
-                               </DropdownMenu>
+                                {reg.recommendation_file_url && reg.status === 'approved' && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => window.open(reg.recommendation_file_url!, '_blank', 'noopener,noreferrer')}
+                                    className="h-8"
+                                  >
+                                    <Download className="h-3 w-3 mr-1" />
+                                    Unduh
+                                  </Button>
+                                )}
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))

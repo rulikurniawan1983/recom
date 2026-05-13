@@ -143,16 +143,16 @@ export default function NKVRegistrationForm() {
      }
    }
 
-   const saveDocumentRecords = async (
-     registrationId: string,
-     documentUrls: Record<string, string | null>
-   ) => {
-     const docTypes = [
-       { key: 'businessLicense', label: 'Surat Izin Usaha (SIUP)' },
-       { key: 'vetCertificate', label: 'Sertifikat Veteriner' },
-       { key: 'sanitaryCert', label: 'Sertifikat Sanitasi' },
-       { key: 'otherDocs', label: 'Dokumen Pendukung Lain' },
-     ] as const
+    const saveDocumentRecords = async (
+      registrationId: string,
+      documentUrls: Record<string, string | null>
+    ) => {
+      const docTypes = [
+        { key: 'businessLicense', label: 'Surat Izin Usaha (SIUP)' },
+        { key: 'vetCertificate', label: 'Sertifikat Veteriner' },
+        { key: 'sanitaryCert', label: 'Sertifikat Sanitasi' },
+        { key: 'otherDocs', label: 'Dokumen Pendukung Lain' },
+      ] as const
 
       const records = docTypes
         .filter(doc => documentUrls[doc.key])
@@ -167,16 +167,28 @@ export default function NKVRegistrationForm() {
           admin_notes: null,
         }))
 
-     if (records.length === 0) return
+      if (records.length === 0) return
 
-     const { error } = await supabase
-       .from('registration_documents')
-       .insert(records)
+      try {
+        const { data, error } = await supabase
+          .from('registration_documents')
+          .insert(records)
 
-     if (error) {
-       console.error('Failed to save document records:', error)
-     }
-   }
+        if (error) {
+          console.error('Failed to save document records:', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code,
+            records: records
+          })
+        } else {
+          console.log('Successfully saved document records:', data)
+        }
+      } catch (err) {
+        console.error('Unexpected error saving document records:', err)
+      }
+    }
 
   const uploadDocuments = async (
     documents: NKVFormData['documents'],

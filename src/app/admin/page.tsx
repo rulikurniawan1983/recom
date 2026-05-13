@@ -3,28 +3,26 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
- import { 
-   BarChart3, 
-   CheckCircle, 
-   Clock, 
-   XCircle, 
-   FileText, 
-   Eye,
-   MoreVertical,
-   Trash2,
-   LayoutDashboard,
-   ListFilter,
-   AlertCircle,
-   LogOut,
-   Shield,
-   File,
-   Users,
-   X,
-   Menu,
-   Search,
-   Calendar,
-   ClipboardCheck
- } from 'lucide-react';
+import { 
+  BarChart3, 
+  CheckCircle, 
+  Clock, 
+  XCircle, 
+  FileText, 
+  Eye,
+  Trash2,
+  LayoutDashboard,
+  AlertCircle,
+  LogOut,
+  Shield,
+  File,
+  Users,
+  X,
+  Menu,
+  Search,
+  Calendar,
+  ClipboardCheck
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -43,12 +41,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -59,7 +51,14 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { RegistrationStatus, Profile } from '@/lib/types';
+import RegistrationDetailModal from '@/components/registration-detail-modal';
+import { createClient as createServiceClient } from '@supabase/supabase-js';
+import type { RegistrationStatus, Profile, NKVRegistration, DokterHewanRegistration } from '@/lib/types';
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+type Registration = (NKVRegistration & { type: 'NKV' }) | (DokterHewanRegistration & { type: 'Dokter Hewan' });
 
 type AdminRegistration = {
   id: string;
@@ -116,10 +115,10 @@ export default function AdminPage() {
   const [users, setUsers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<RegistrationStatus | 'all'>('all');
-  const [typeFilter, setTypeFilter] = useState<'all' | 'NKV' | 'Dokter Hewan'>('all');
-  const [viewMode, setViewMode] = useState<'dashboard' | 'table' | 'users'>('dashboard');
+   const [searchQuery, setSearchQuery] = useState('');
+   const [statusFilter, setStatusFilter] = useState<RegistrationStatus | 'all'>('all');
+   const [typeFilter, setTypeFilter] = useState<'all' | 'NKV' | 'Dokter Hewan'>('all');
+   const [viewMode, setViewMode] = useState<'dashboard' | 'applications' | 'users'>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedReg, setSelectedReg] = useState<AdminRegistration | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -172,14 +171,19 @@ export default function AdminPage() {
   const [verifyNotes, setVerifyNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Delete modal
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+    // Delete modal
+    const [deleteOpen, setDeleteOpen] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
-  // User email
-  const [userEmail, setUserEmail] = useState<string>('admin@example.com');
+    // Registration detail modal state
+    const [showDetailModal, setShowDetailModal] = useState(false);
+    const [detailReg, setDetailReg] = useState<Registration | null>(null);
+    const [detailLoading, setDetailLoading] = useState(false);
 
-  // Stats calculation
+    // User email
+    const [userEmail, setUserEmail] = useState<string>('admin@example.com');
+
+    // Stats calculation
   const stats = useMemo(() => {
     const total = registrations.length;
     const draft = registrations.filter(r => r.status === 'draft').length;
@@ -206,29 +210,29 @@ export default function AdminPage() {
     };
   }, [registrations]);
 
-  const filteredRegistrations = useMemo(() => {
-    return registrations.filter(reg => {
-      const matchesSearch = searchQuery === '' ||
-        reg.registration_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        reg.applicant_name.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || reg.status === statusFilter;
-      const matchesType = typeFilter === 'all' || reg.type === typeFilter;
+   const filteredRegistrations = useMemo(() => {
+     return registrations.filter(reg => {
+       const matchesSearch = searchQuery === '' ||
+         reg.registration_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+         reg.applicant_name.toLowerCase().includes(searchQuery.toLowerCase());
+       const matchesStatus = statusFilter === 'all' || reg.status === statusFilter;
+       const matchesType = typeFilter === 'all' || reg.type === typeFilter;
 
-      return matchesSearch && matchesStatus && matchesType;
-    });
-  }, [registrations, searchQuery, statusFilter, typeFilter]);
+       return matchesSearch && matchesStatus && matchesType;
+     });
+   }, [registrations, searchQuery, statusFilter, typeFilter]);
 
-  const filteredUsers = useMemo(() => {
-    return users.filter(user =>
-      searchQuery === '' ||
-      (user.full_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [users, searchQuery]);
+   const filteredUsers = useMemo(() => {
+     return users.filter(user =>
+       searchQuery === '' ||
+       (user.full_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+       user.email.toLowerCase().includes(searchQuery.toLowerCase())
+     );
+   }, [users, searchQuery]);
 
-  // Computed variants for view toggle buttons
-  const dashboardVariant = viewMode === 'dashboard' ? 'default' : 'outline';
-  const tableVariant = viewMode === 'table' ? 'default' : 'outline';
+   // Computed variants for view toggle buttons
+   const dashboardVariant = viewMode === 'dashboard' ? 'default' : 'outline';
+   const applicationsVariant = viewMode === 'applications' ? 'default' : 'outline';
 
   const fetchData = useCallback(async () => {
     // Defer state updates to avoid synchronous setState in effect
@@ -390,15 +394,75 @@ export default function AdminPage() {
       setScheduleOpen(true);
     };
 
-    const openAssessModal = (reg: AdminRegistration) => {
-      setSelectedReg(reg);
-      setAssessmentScore(0);
-      setAssessmentNotes('');
-      setRecommendationFileUrl('');
-      setAssessOpen(true);
-    };
+     const openAssessModal = (reg: AdminRegistration) => {
+       setSelectedReg(reg);
+       setAssessmentScore(0);
+       setAssessmentNotes('');
+       setRecommendationFileUrl('');
+       setAssessOpen(true);
+     };
 
-    const openDocPreview = (doc: Document) => {
+     const openDetailModal = async (reg: AdminRegistration) => {
+       setDetailLoading(true);
+       try {
+         // Use service role client to bypass RLS (admin viewing any registration)
+         const serviceSupabase = createServiceClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+           auth: { autoRefreshToken: false, persistSession: false }
+         });
+
+         let fullReg: Registration | null = null;
+         if (reg.type === 'NKV') {
+           const { data, error } = await serviceSupabase
+             .from('nkv_registrations')
+             .select(`
+               *,
+               profiles!inner(full_name, email),
+               business_units(name, address, phone, email, business_type),
+               product_types(name, description, category),
+               registration_documents(
+                 id, document_type, file_url, file_name, status, uploaded_at, admin_notes
+               ),
+               tracking_logs(id, status, created_at, notes, created_by)
+             `)
+             .eq('id', reg.id)
+             .single();
+           if (error) throw error;
+           if (data) {
+             fullReg = { ...data, type: 'NKV' as const };
+           }
+         } else {
+           const { data, error } = await serviceSupabase
+             .from('dokter_hewan_registrations')
+             .select(`
+               *,
+               profiles!inner(full_name, email),
+               registration_documents(
+                 id, document_type, file_url, file_name, status, uploaded_at, admin_notes
+               ),
+               tracking_logs(id, status, created_at, notes, created_by)
+             `)
+             .eq('id', reg.id)
+             .single();
+           if (error) throw error;
+           if (data) {
+             fullReg = { ...data, type: 'Dokter Hewan' as const };
+           }
+         }
+         if (fullReg) {
+           setDetailReg(fullReg);
+           setShowDetailModal(true);
+         } else {
+           alert('Data permohonan tidak ditemukan');
+         }
+       } catch (err) {
+         console.error('Failed to fetch registration detail:', err);
+         alert('Gagal memuat detail permohonan: ' + (err instanceof Error ? err.message : 'Unknown error'));
+       } finally {
+         setDetailLoading(false);
+       }
+     };
+
+     const openDocPreview = (doc: Document) => {
       setPreviewDoc(doc);
       setPreviewOpen(true);
     };
@@ -615,42 +679,42 @@ export default function AdminPage() {
             </button>
           </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-1">
-            <button
-              onClick={() => setViewMode('dashboard')}
-              className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                viewMode === 'dashboard' 
-                  ? 'bg-blue-50 text-blue-700' 
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              <LayoutDashboard className="h-5 w-5" />
-              Dashboard
-            </button>
-            <button
-              onClick={() => setViewMode('table')}
-              className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                viewMode === 'table' 
-                  ? 'bg-blue-50 text-blue-700' 
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              <ListFilter className="h-5 w-5" />
-              Semua Permohonan
-            </button>
-            <button
-              onClick={() => setViewMode('users')}
-              className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                viewMode === 'users' 
-                  ? 'bg-blue-50 text-blue-700' 
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              <Users className="h-5 w-5" />
-              Kelola Pengguna
-            </button>
-          </nav>
+            {/* Navigation */}
+            <nav className="flex-1 px-4 py-6 space-y-1">
+              <button
+                onClick={() => setViewMode('dashboard')}
+                className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  viewMode === 'dashboard' 
+                    ? 'bg-blue-50 text-blue-700' 
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <LayoutDashboard className="h-5 w-5" />
+                Dashboard
+              </button>
+              <button
+                onClick={() => setViewMode('applications')}
+                className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  viewMode === 'applications' 
+                    ? 'bg-blue-50 text-blue-700' 
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <FileText className="h-5 w-5" />
+                Semua Permohonan
+              </button>
+              <button
+                onClick={() => setViewMode('users')}
+                className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  viewMode === 'users' 
+                    ? 'bg-blue-50 text-blue-700' 
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <Users className="h-5 w-5" />
+                Daftar Pengguna
+              </button>
+            </nav>
 
           {/* User Section */}
           <div className="px-4 py-4 border-t border-gray-200">
@@ -773,439 +837,297 @@ export default function AdminPage() {
                     </Card>
                   );
                 })}
-              </div>
+               </div>
 
-              {/* Search and Filters */}
-              <Card className="mb-6">
-                <CardContent className="pt-6">
-                  <div className="flex flex-col lg:flex-row gap-4">
-                    <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <Input
-                        placeholder="Cari nomor registrasi, nama, atau email..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
-                    <div className="flex gap-2 flex-wrap">
-                      <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value as RegistrationStatus | 'all')}
-                        className="px-3 py-2 border border-gray-300 rounded-md text-sm bg-white min-w-[160px]"
-                      >
-                        <option value="all">Semua Status</option>
-                        {Object.entries(STATUS_LABELS).map(([key, label]) => (
-                          <option key={key} value={key}>{label}</option>
-                        ))}
-                      </select>
-                      <select
-                        value={typeFilter}
-                        onChange={(e) => setTypeFilter(e.target.value as 'all' | 'NKV' | 'Dokter Hewan')}
-                        className="px-3 py-2 border border-gray-300 rounded-md text-sm bg-white"
-                      >
-                        <option value="all">Semua Jenis</option>
-                        <option value="NKV">NKV</option>
-                        <option value="Dokter Hewan">Dokter Hewan</option>
-                      </select>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+               {/* Analysis Section - No table, just analytics */}
+               <Card className="bg-blue-50 border-blue-200">
+                 <CardHeader>
+                   <CardTitle className="text-blue-900">Analisis Permohonan</CardTitle>
+                   <CardDescription>
+                     Ringkasan statistik dan tren permohonan
+                   </CardDescription>
+                 </CardHeader>
+                 <CardContent>
+                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                     <div className="p-4 bg-white rounded-lg border border-blue-100">
+                       <h4 className="font-medium text-gray-900 mb-2">Tingkat Persetujuan</h4>
+                       <div className="text-2xl font-bold text-green-600">
+                         {stats.total > 0 ? Math.round((stats.approved / stats.total) * 100) : 0}%
+                       </div>
+                       <p className="text-xs text-gray-500 mt-1">
+                         {stats.approved} disetujui dari {stats.total} total
+                       </p>
+                     </div>
+                     <div className="p-4 bg-white rounded-lg border border-yellow-100">
+                       <h4 className="font-medium text-gray-900 mb-2">Perlu Tindakan</h4>
+                       <div className="text-2xl font-bold text-yellow-600">{stats.needsAction}</div>
+                       <p className="text-xs text-gray-500 mt-1">
+                         Permohonan yang memerlukan perhatian admin
+                       </p>
+                     </div>
+                     <div className="p-4 bg-white rounded-lg border border-purple-100">
+                       <h4 className="font-medium text-gray-900 mb-2">Rata-rata Waktu Proses</h4>
+                       <div className="text-2xl font-bold text-purple-600">3-5 hari</div>
+                       <p className="text-xs text-gray-500 mt-1">
+                         Estimasi waktu verifikasi hingga disetujui
+                       </p>
+                     </div>
+                   </div>
+                 </CardContent>
+                </Card>
+              </>
+            )}
 
-              {/* Applications List - Dashboard View */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Daftar Permohonan</CardTitle>
-                  <CardDescription>
-                    {filteredRegistrations.length} dari {registrations.length} permohonan
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
-                  {loading ? (
-                    <div className="space-y-4 p-6">
-                      {[...Array(5)].map((_, i) => (
-                        <div key={i} className="animate-pulse flex gap-4">
-                          <div className="h-12 bg-gray-200 rounded w-full" />
-                          <div className="h-12 bg-gray-200 rounded w-32" />
-                          <div className="h-12 bg-gray-200 rounded w-24" />
-                        </div>
-                      ))}
+            {/* Applications View */}
+            {viewMode === 'applications' && (
+              <>
+                <div className="mb-8">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                      <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
+                        Semua Permohonan
+                      </h1>
+                      <p className="text-gray-600 mt-1">
+                        Kelola dan verifikasi semua aplikasi
+                      </p>
                     </div>
-                  ) : error ? (
-                    <div className="p-8 text-center text-red-600">
-                      <AlertCircle className="h-12 w-12 mx-auto mb-3 text-red-400" />
-                      <p>{error}</p>
-                      <Button onClick={fetchData} className="mt-4">
-                        Coba Lagi
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setViewMode('dashboard')}
+                      >
+                        <LayoutDashboard className="h-4 w-4 mr-2" />
+                        Dashboard
                       </Button>
                     </div>
-                  ) : filteredRegistrations.length === 0 ? (
-                    <div className="p-8 text-center text-gray-500">
-                      <FileText className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                      <p>Tidak ada permohonan yang sesuai</p>
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>No. Registrasi</TableHead>
-                            <TableHead>Nama</TableHead>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Telepon</TableHead>
-                            <TableHead>Jenis</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Aksi</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredRegistrations.map((reg) => (
-                            <TableRow key={reg.id} className="hover:bg-gray-50">
-                              <TableCell className="font-medium">
-                                {reg.registration_number}
-                              </TableCell>
-                              <TableCell>{reg.applicant_name}</TableCell>
-                              <TableCell>{reg.email}</TableCell>
-                              <TableCell>{reg.phone}</TableCell>
-                              <TableCell>
-                                {getTypeBadge(reg.type)}
-                              </TableCell>
-                              <TableCell>
-                                {getStatusBadge(reg.status)}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="sm">
-                                      <MoreVertical className="h-4 w-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                   <DropdownMenuContent align="end">
-                                     <DropdownMenuItem onClick={() => window.open(`/admin/registrations/${reg.id}`, '_blank')}>
-                                       <Eye className="h-4 w-4 mr-2" />
-                                       Lihat Detail
-                                     </DropdownMenuItem>
-
-                                     {reg.status === 'submitted' && (
-                                       <DropdownMenuItem onClick={() => openVerifyModal(reg, 'approve')}>
-                                         <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
-                                         Verifikasi Dokumen
-                                       </DropdownMenuItem>
-                                     )}
-
-                                     {reg.status === 'document_verification' && (
-                                       <>
-                                         <DropdownMenuItem onClick={() => openDocumentsModal(reg)}>
-                                           <File className="h-4 w-4 mr-2 text-blue-600" />
-                                           Lihat/Verifikasi Dokumen
-                                         </DropdownMenuItem>
-                                         <DropdownMenuItem onClick={() => openScheduleModal(reg)}>
-                                           <Calendar className="h-4 w-4 mr-2 text-blue-600" />
-                                           Jadwalkan Pemeriksaan Lapangan
-                                         </DropdownMenuItem>
-                                       </>
-                                     )}
-
-                                     {(reg.status === 'field_inspection' || reg.status === 'assessment') && (
-                                       <DropdownMenuItem onClick={() => openAssessModal(reg)}>
-                                         <ClipboardCheck className="h-4 w-4 mr-2 text-purple-600" />
-                                         Input Penilaian
-                                       </DropdownMenuItem>
-                                     )}
-
-                                     {reg.status !== 'draft' && reg.status !== 'approved' && reg.status !== 'rejected' && (
-                                       <DropdownMenuItem onClick={() => openVerifyModal(reg, 'request_revision')}>
-                                         <AlertCircle className="h-4 w-4 mr-2 text-yellow-600" />
-                                         Minta Revisi
-                                       </DropdownMenuItem>
-                                     )}
-
-                                     {reg.status !== 'approved' && reg.status !== 'rejected' && reg.status !== 'draft' && (
-                                       <DropdownMenuItem onClick={() => openVerifyModal(reg, 'reject')}>
-                                         <XCircle className="h-4 w-4 mr-2 text-red-600" />
-                                         Tolak
-                                       </DropdownMenuItem>
-                                     )}
-
-                                     {reg.status === 'draft' && (
-                                       <DropdownMenuItem 
-                                         onClick={() => openDeleteModal(reg)}
-                                         className="text-red-600"
-                                       >
-                                         <Trash2 className="h-4 w-4 mr-2" />
-                                         Hapus
-                                       </DropdownMenuItem>
-                                     )}
-                                   </DropdownMenuContent>
-                                </DropdownMenu>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </>
-          )}
-
-          {/* Table View - All Applications */}
-          {viewMode === 'table' && (
-            <>
-              <div className="mb-8">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div>
-                    <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
-                      Semua Permohonan
-                    </h1>
-                    <p className="text-gray-600 mt-1">
-                      Kelola dan verifikasi semua aplikasi
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant={dashboardVariant}
-                      size="sm"
-                      onClick={() => setViewMode('dashboard')}
-                    >
-                      Dashboard
-                    </Button>
-                    <Button
-                      variant={tableVariant}
-                      size="sm"
-                      onClick={() => setViewMode('table')}
-                    >
-                      Tabel
-                    </Button>
                   </div>
                 </div>
-              </div>
 
-              {/* Filters */}
-              <Card className="mb-6">
-                <CardContent className="pt-6">
-                  <div className="flex flex-col lg:flex-row gap-4">
-                    <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <Input
-                        placeholder="Cari nomor registrasi, nama, atau usaha..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10"
-                      />
+                {/* Filters */}
+                <Card className="mb-6">
+                  <CardContent className="pt-6">
+                    <div className="flex flex-col lg:flex-row gap-4">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Input
+                          placeholder="Cari nomor registrasi, nama, atau usaha..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
+                      <div className="flex gap-2 flex-wrap">
+                        <select
+                          value={statusFilter}
+                          onChange={(e) => setStatusFilter(e.target.value as RegistrationStatus | 'all')}
+                          className="px-3 py-2 border border-gray-300 rounded-md text-sm bg-white min-w-[160px]"
+                        >
+                          <option value="all">Semua Status</option>
+                          {Object.entries(STATUS_LABELS).map(([key, label]) => (
+                            <option key={key} value={key}>{label}</option>
+                          ))}
+                        </select>
+                        <select
+                          value={typeFilter}
+                          onChange={(e) => setTypeFilter(e.target.value as 'all' | 'NKV' | 'Dokter Hewan')}
+                          className="px-3 py-2 border border-gray-300 rounded-md text-sm bg-white"
+                        >
+                          <option value="all">Semua Jenis</option>
+                          <option value="NKV">NKV</option>
+                          <option value="Dokter Hewan">Dokter Hewan</option>
+                        </select>
+                      </div>
                     </div>
-                    <div className="flex gap-2 flex-wrap">
-                      <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value as RegistrationStatus | 'all')}
-                        className="px-3 py-2 border border-gray-300 rounded-md text-sm bg-white min-w-[160px]"
-                      >
-                        <option value="all">Semua Status</option>
-                        {Object.entries(STATUS_LABELS).map(([key, label]) => (
-                          <option key={key} value={key}>{label}</option>
+                  </CardContent>
+                </Card>
+
+                {/* Applications Table */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Semua Permohonan</CardTitle>
+                    <CardDescription>
+                      {filteredRegistrations.length} dari {registrations.length} permohonan
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    {loading ? (
+                      <div className="space-y-4 p-6">
+                        {[...Array(5)].map((_, i) => (
+                          <div key={i} className="animate-pulse flex gap-4">
+                            <div className="h-12 bg-gray-200 rounded w-full" />
+                            <div className="h-12 bg-gray-200 rounded w-32" />
+                            <div className="h-12 bg-gray-200 rounded w-24" />
+                          </div>
                         ))}
-                      </select>
-                      <select
-                        value={typeFilter}
-                        onChange={(e) => setTypeFilter(e.target.value as 'all' | 'NKV' | 'Dokter Hewan')}
-                        className="px-3 py-2 border border-gray-300 rounded-md text-sm bg-white"
-                      >
-                        <option value="all">Semua Jenis</option>
-                        <option value="NKV">NKV</option>
-                        <option value="Dokter Hewan">Dokter Hewan</option>
-                      </select>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Table */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Daftar Permohonan</CardTitle>
-                  <CardDescription>
-                    {filteredRegistrations.length} dari {registrations.length} permohonan
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
-                  {loading ? (
-                    <div className="space-y-4 p-6">
-                      {[...Array(5)].map((_, i) => (
-                        <div key={i} className="animate-pulse flex gap-4">
-                          <div className="h-12 bg-gray-200 rounded w-full" />
-                          <div className="h-12 bg-gray-200 rounded w-32" />
-                          <div className="h-12 bg-gray-200 rounded w-24" />
-                        </div>
-                      ))}
-                    </div>
-                  ) : error ? (
-                    <div className="p-8 text-center text-red-600">
-                      <AlertCircle className="h-12 w-12 mx-auto mb-3 text-red-400" />
-                      <p>{error}</p>
-                      <Button onClick={fetchData} className="mt-4">
-                        Coba Lagi
-                      </Button>
-                    </div>
-                  ) : filteredRegistrations.length === 0 ? (
-                    <div className="p-8 text-center text-gray-500">
-                      <FileText className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                      <p>Tidak ada permohonan yang sesuai</p>
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>No. Registrasi</TableHead>
-                            <TableHead>Jenis</TableHead>
-                            <TableHead>Pemohon</TableHead>
-                            <TableHead>Tanggal</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Aksi</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredRegistrations.map((reg) => (
-                            <TableRow key={reg.id} className="hover:bg-gray-50">
-                              <TableCell className="font-medium">
-                                {reg.registration_number}
-                              </TableCell>
-                              <TableCell>
-                                {getTypeBadge(reg.type)}
-                              </TableCell>
-                              <TableCell>
-                                <div>
-                                  <p className="font-medium text-gray-900">
-                                    {reg.applicant_name}
-                                  </p>
-                                  <p className="text-sm text-gray-500">
-                                    {reg.email}
-                                  </p>
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-gray-600">
-                                {new Date(reg.created_at).toLocaleDateString('id-ID')}
-                              </TableCell>
-                              <TableCell>
-                                {getStatusBadge(reg.status)}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex items-center justify-end gap-2 flex-wrap">
-                                  {/* Always show "Lihat Detail" button */}
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => openDocumentsModal(reg)}
-                                    className="h-8"
-                                  >
-                                    <Eye className="h-4 w-4 mr-1" />
-                                    Lihat Detail
-                                  </Button>
-
-                                  {/* Submitted – Verifikasi Dokumen */}
-                                  {reg.status === 'submitted' && (
+                      </div>
+                    ) : error ? (
+                      <div className="p-8 text-center text-red-600">
+                        <AlertCircle className="h-12 w-12 mx-auto mb-3 text-red-400" />
+                        <p>{error}</p>
+                        <Button onClick={fetchData} className="mt-4">
+                          Coba Lagi
+                        </Button>
+                      </div>
+                    ) : filteredRegistrations.length === 0 ? (
+                      <div className="p-8 text-center text-gray-500">
+                        <FileText className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                        <p>Tidak ada permohonan yang sesuai</p>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>No. Registrasi</TableHead>
+                              <TableHead>Jenis</TableHead>
+                              <TableHead>Pemohon</TableHead>
+                              <TableHead>Tanggal</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead className="text-right">Aksi</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {filteredRegistrations.map((reg) => (
+                              <TableRow key={reg.id} className="hover:bg-gray-50">
+                                <TableCell className="font-medium">
+                                  {reg.registration_number}
+                                </TableCell>
+                                <TableCell>
+                                  {getTypeBadge(reg.type)}
+                                </TableCell>
+                                <TableCell>
+                                  <div>
+                                    <p className="font-medium text-gray-900">
+                                      {reg.applicant_name}
+                                    </p>
+                                    <p className="text-sm text-gray-500">
+                                      {reg.email}
+                                    </p>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-gray-600">
+                                  {new Date(reg.created_at).toLocaleDateString('id-ID')}
+                                </TableCell>
+                                <TableCell>
+                                  {getStatusBadge(reg.status)}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex items-center justify-end gap-2 flex-wrap">
+                                    {/* Detail Button */}
                                     <Button
-                                      variant="default"
+                                      variant="outline"
                                       size="sm"
-                                      onClick={() => openVerifyModal(reg, 'approve')}
-                                      className="h-8 bg-green-600 hover:bg-green-700"
+                                      onClick={() => openDetailModal(reg)}
+                                      disabled={detailLoading}
+                                      className="h-8"
                                     >
-                                      <CheckCircle className="h-4 w-4 mr-1" />
-                                      Verifikasi Dokumen
+                                      <Eye className="h-4 w-4 mr-1" />
+                                      Detail
                                     </Button>
-                                  )}
 
-                                  {/* Document Verification – Actions for each document */}
-                                  {reg.status === 'document_verification' && (
-                                    <>
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => openDocumentsModal(reg)}
-                                        className="h-8"
-                                      >
-                                        <File className="h-4 w-4 mr-1" />
-                                        Dokumen
-                                      </Button>
+                                    {/* Verify Documents (Submitted) */}
+                                    {reg.status === 'submitted' && (
                                       <Button
                                         variant="default"
                                         size="sm"
-                                        onClick={() => openScheduleModal(reg)}
-                                        className="h-8 bg-blue-600 hover:bg-blue-700"
+                                        onClick={() => openVerifyModal(reg, 'approve')}
+                                        className="h-8 bg-green-600 hover:bg-green-700"
                                       >
-                                        <Calendar className="h-4 w-4 mr-1" />
-                                        Jadwalkan
+                                        <CheckCircle className="h-4 w-4 mr-1" />
+                                        Verifikasi
                                       </Button>
-                                    </>
-                                  )}
+                                    )}
 
-                                  {/* Field Inspection / Assessment – Input Penilaian */}
-                                  {(reg.status === 'field_inspection' || reg.status === 'assessment') && (
-                                    <Button
-                                      variant="default"
-                                      size="sm"
-                                      onClick={() => openAssessModal(reg)}
-                                      className="h-8 bg-purple-600 hover:bg-purple-700"
-                                    >
-                                      <ClipboardCheck className="h-4 w-4 mr-1" />
-                                      Input Penilaian
-                                    </Button>
-                                  )}
+                                    {/* View Documents & Schedule (Document Verification) */}
+                                    {reg.status === 'document_verification' && (
+                                      <>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => openDocumentsModal(reg)}
+                                          className="h-8"
+                                        >
+                                          <File className="h-4 w-4 mr-1" />
+                                          Dokumen
+                                        </Button>
+                                        <Button
+                                          variant="default"
+                                          size="sm"
+                                          onClick={() => openScheduleModal(reg)}
+                                          className="h-8 bg-blue-600 hover:bg-blue-700"
+                                        >
+                                          <Calendar className="h-4 w-4 mr-1" />
+                                          Jadwal
+                                        </Button>
+                                      </>
+                                    )}
 
-                                  {/* Minta Revisi – except draft/approved/rejected */}
-                                  {reg.status !== 'draft' && reg.status !== 'approved' && reg.status !== 'rejected' && (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => openVerifyModal(reg, 'request_revision')}
-                                      className="h-8 text-yellow-600 border-yellow-200 hover:bg-yellow-50"
-                                    >
-                                      <AlertCircle className="h-4 w-4 mr-1" />
-                                      Minta Revisi
-                                    </Button>
-                                  )}
+                                    {/* Input Assessment (Field Inspection / Assessment) */}
+                                    {(reg.status === 'field_inspection' || reg.status === 'assessment') && (
+                                      <Button
+                                        variant="default"
+                                        size="sm"
+                                        onClick={() => openAssessModal(reg)}
+                                        className="h-8 bg-purple-600 hover:bg-purple-700"
+                                      >
+                                        <ClipboardCheck className="h-4 w-4 mr-1" />
+                                        Penilaian
+                                      </Button>
+                                    )}
 
-                                  {/* Tolak – except final/draft */}
-                                  {reg.status !== 'approved' && reg.status !== 'rejected' && reg.status !== 'draft' && (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => openVerifyModal(reg, 'reject')}
-                                      className="h-8 text-red-600 border-red-200 hover:bg-red-50"
-                                    >
-                                      <XCircle className="h-4 w-4 mr-1" />
-                                      Tolak
-                                    </Button>
-                                  )}
+                                    {/* Request Revision */}
+                                    {reg.status !== 'draft' && reg.status !== 'approved' && reg.status !== 'rejected' && (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => openVerifyModal(reg, 'request_revision')}
+                                        className="h-8 text-yellow-600 border-yellow-600 hover:bg-yellow-50"
+                                      >
+                                        <AlertCircle className="h-4 w-4 mr-1" />
+                                        Revisi
+                                      </Button>
+                                    )}
 
-                                  {/* Hapus – only for draft */}
-                                  {reg.status === 'draft' && (
-                                    <Button
-                                      variant="destructive"
-                                      size="sm"
-                                      onClick={() => openDeleteModal(reg)}
-                                      className="h-8"
-                                    >
-                                      <Trash2 className="h-4 w-4 mr-1" />
-                                      Hapus
-                                    </Button>
-                                  )}
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </>
-          )}
+                                    {/* Reject */}
+                                    {reg.status !== 'approved' && reg.status !== 'rejected' && reg.status !== 'draft' && (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => openVerifyModal(reg, 'reject')}
+                                        className="h-8 text-red-600 border-red-600 hover:bg-red-50"
+                                      >
+                                        <XCircle className="h-4 w-4 mr-1" />
+                                        Tolak
+                                      </Button>
+                                    )}
 
-          {/* Users View */}
+                                    {/* Delete Draft */}
+                                    {reg.status === 'draft' && (
+                                      <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={() => openDeleteModal(reg)}
+                                        className="h-8"
+                                      >
+                                        <Trash2 className="h-4 w-4 mr-1" />
+                                        Hapus
+                                      </Button>
+                                    )}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </>
+            )}
+
+            {/* Users View */}
           {viewMode === 'users' && (
             <>
               <div className="mb-8">
@@ -1218,31 +1140,24 @@ export default function AdminPage() {
                       Konfigurasi akun dan hak akses pengguna
                     </p>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={() => setCreateUserOpen(true)}
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      <Users className="h-4 w-4 mr-2" />
-                      Tambah pengguna
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setViewMode('dashboard')}
-                    >
-                      Dashboard
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setViewMode('table')}
-                    >
-                      Tabel
-                    </Button>
-                  </div>
+                   <div className="flex gap-2">
+                     <Button
+                       variant="default"
+                       size="sm"
+                       onClick={() => setCreateUserOpen(true)}
+                       className="bg-blue-600 hover:bg-blue-700"
+                     >
+                       <Users className="h-4 w-4 mr-2" />
+                       Tambah pengguna
+                     </Button>
+                     <Button
+                       variant="outline"
+                       size="sm"
+                       onClick={() => setViewMode('dashboard')}
+                     >
+                       Dashboard
+                     </Button>
+                   </div>
                 </div>
               </div>
 
@@ -2176,8 +2091,28 @@ export default function AdminPage() {
                {deletingUser ? 'Menghapus...' : 'Ya, Hapus'}
              </Button>
            </DialogFooter>
-         </DialogContent>
-       </Dialog>
-    </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Registration Detail Modal */}
+        {detailReg && (
+          <RegistrationDetailModal
+            isOpen={showDetailModal}
+            onClose={() => {
+              setShowDetailModal(false);
+              setDetailReg(null);
+            }}
+            registration={detailReg}
+            onUpdate={async (id, data) => {
+              // Refresh data after update
+              await fetchData();
+            }}
+            onDelete={async (id) => {
+              // Refresh data after delete
+              await fetchData();
+            }}
+          />
+        )}
+      </div>
   );
 }
