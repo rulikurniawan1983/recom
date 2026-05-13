@@ -18,6 +18,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter } from '@/components/ui/modal'
+import { Textarea } from '@/components/ui/textarea'
 import { useRouter } from 'next/navigation'
 import {
   BarChart3,
@@ -26,9 +28,14 @@ import {
   XCircle,
   FileText,
   Eye,
+  File,
+  Image as ImageIcon,
   MoreVertical,
+  ClipboardCheck,
+  Trash2,
   LayoutDashboard,
-  ListFilter
+  ListFilter,
+  AlertCircle
 } from 'lucide-react'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -62,17 +69,43 @@ interface Registration {
   applicant_name: string
   email?: string
   phone?: string
+  documents_verified?: boolean
+}
+
+interface Document {
+  id: string
+  document_type: string
+  file_url: string
+  file_name: string
+  verified?: boolean
+}
+
+type ModalState = {
+  open: boolean
+  type: 'documents' | 'verify' | 'delete' | null
+  registration: Registration | null
 }
 
 export default function AdminPage() {
   const router = useRouter()
   const [registrations, setRegistrations] = useState<Registration[]>([])
+  const [documents, setDocuments] = useState<Document[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [typeFilter, setTypeFilter] = useState('all')
   const [viewMode, setViewMode] = useState<'dashboard' | 'table'>('dashboard')
+  const [modal, setModal] = useState<ModalState>({ open: false, type: null, registration: null })
+  const [loadingDocs, setLoadingDocs] = useState(false)
+  const [verifyNotes, setVerifyNotes] = useState('')
+  const [verifyAction, setVerifyAction] = useState<'approve' | 'reject'>('approve')
+  const [submitting, setSubmitting] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  const openDeleteModal = (reg: Registration) => {
+    setModal({ open: true, type: 'delete', registration: reg })
+  }
 
   const fetchRegistrations = async () => {
     try {
@@ -99,6 +132,83 @@ export default function AdminPage() {
     }
     load()
   }, [])
+
+  const fetchDocuments = async (reg: Registration) => {
+    setLoadingDocs(true)
+    setModal({ open: true, type: 'documents', registration: reg })
+    try {
+      const res = await fetch(`/api/admin/registrations/${reg.id}/documents`)
+      if (res.ok) {
+        const data = await res.json()
+        setDocuments(Array.isArray(data) ? data : [])
+      } else {
+        setDocuments([])
+      }
+    } catch {
+      setDocuments([])
+    } finally {
+      setLoadingDocs(false)
+    }
+  }
+
+  const openVerifyModal = (reg: Registration) => {
+    setModal({ open: true, type: 'verify', registration: reg })
+    setVerifyNotes('')
+    setVerifyAction('approve')
+  }
+
+  const closeModal = () => {
+    setModal({ open: false, type: null, registration: null })
+    setVerifyNotes('')
+  }
+
+  const submitVerification = async () => {
+    if (!modal.registration) return
+    setSubmitting(true)
+    try {
+      const res = await fetch(`/api/admin/registrations/${modal.registration.id}/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: verifyAction,
+          notes: verifyNotes,
+          status: verifyAction === 'approve' ? 'document_verification' : 'revision_requested'
+        })
+      })
+      if (res.ok) {
+        closeModal()
+        fetchRegistrations()
+      } else {
+        const err = await res.json()
+        alert(err.error || 'Gagal melakukan verifikasi')
+      }
+    } catch {
+      alert('Terjadi kesalahan')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const submitDelete = async () => {
+    if (!modal.registration) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/admin/registrations/${modal.registration.id}`, {
+        method: 'DELETE'
+      })
+      if (res.ok) {
+        closeModal()
+        fetchRegistrations()
+      } else {
+        const err = await res.json()
+        alert(err.error || 'Gagal menghapus permohonan')
+      }
+    } catch {
+      alert('Terjadi kesalahan')
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   const filteredRegistrations = registrations.filter(reg => {
     const matchesSearch = reg.registration_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -141,9 +251,14 @@ export default function AdminPage() {
     )
   }
 
+  const getFileIcon = (docType: string) => {
+    const type = docType.toLowerCase()
+    if (type.includes('foto') || type.includes('photo')) return <ImageIcon className="w-4 h-4" />
+    return <File className="w-4 h-4" />
+  }
+
   return (
     <div className="min-h-screen bg-blue-100/80 backdrop-blur-sm">
-      {/* Header */}
       <header className="bg-white/90 backdrop-blur-sm shadow-md border-b border-blue-200">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div>
@@ -178,7 +293,6 @@ export default function AdminPage() {
       <main className="max-w-7xl mx-auto px-4 py-6">
         {viewMode === 'dashboard' ? (
           <>
-            {/* Statistics Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <Card className="border-blue-200 bg-white/80 backdrop-blur-sm shadow-sm">
                 <CardContent className="pt-4">
@@ -226,7 +340,6 @@ export default function AdminPage() {
               </Card>
             </div>
 
-            {/* Secondary Statistics */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <Card className="border-blue-200 bg-white/80">
                 <CardContent className="pt-4 text-center">
@@ -237,13 +350,13 @@ export default function AdminPage() {
               <Card className="border-yellow-200 bg-white/80">
                 <CardContent className="pt-4 text-center">
                   <p className="text-2xl font-bold text-yellow-900">{stats.verification}</p>
-                  <p className="text-xs text-yellow-600">Verifikasi Dokumen</p>
+                  <p className="text-xs text-yellow-600">Verifikasi</p>
                 </CardContent>
               </Card>
               <Card className="border-purple-200 bg-white/80">
                 <CardContent className="pt-4 text-center">
                   <p className="text-2xl font-bold text-purple-900">{stats.inspection}</p>
-                  <p className="text-xs text-purple-600">Pemeriksaan Lapangan</p>
+                  <p className="text-xs text-purple-600">Pemeriksaan</p>
                 </CardContent>
               </Card>
               <Card className="border-orange-200 bg-white/80">
@@ -254,7 +367,6 @@ export default function AdminPage() {
               </Card>
             </div>
 
-            {/* Recent Applications Overview */}
             <div>
               <h3 className="text-lg font-semibold mb-3 text-blue-800">Permohonan Terbaru</h3>
               {registrations.length === 0 ? (
@@ -268,7 +380,11 @@ export default function AdminPage() {
               ) : (
                 <div className="space-y-3">
                   {registrations.slice(0, 10).map((reg) => (
-                    <Card key={reg.id} className="border-blue-200 bg-white/80 backdrop-blur-sm shadow-sm">
+                    <Card
+                      key={reg.id}
+                      className="border-blue-200 bg-white/80 backdrop-blur-sm shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                      onClick={() => fetchDocuments(reg)}
+                    >
                       <CardContent className="pt-4">
                         <div className="flex justify-between items-start">
                           <div>
@@ -280,9 +396,12 @@ export default function AdminPage() {
                               {new Date(reg.created_at).toLocaleDateString('id-ID')}
                             </p>
                           </div>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[reg.status]}`}>
-                            {STATUS_LABELS[reg.status] || reg.status}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[reg.status]}`}>
+                              {STATUS_LABELS[reg.status] || reg.status}
+                            </span>
+                            <Eye className="w-4 h-4 text-gray-400" />
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -292,13 +411,11 @@ export default function AdminPage() {
             </div>
           </>
         ) : (
-          /* Table View */
           <Card className="bg-white/80 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="text-blue-900 text-2xl">Daftar Permohonan</CardTitle>
             </CardHeader>
             <CardContent>
-              {/* Search and Filters */}
               <div className="flex flex-col md:flex-row gap-4 mb-6">
                 <div className="relative flex-1">
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
@@ -317,9 +434,7 @@ export default function AdminPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => setStatusFilter('all')}>
-                      Semua Status
-                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setStatusFilter('all')}>Semua Status</DropdownMenuItem>
                     {Object.entries(STATUS_LABELS).map(([value, label]) => (
                       <DropdownMenuItem key={value} onClick={() => setStatusFilter(value)}>
                         {label}
@@ -335,20 +450,13 @@ export default function AdminPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => setTypeFilter('all')}>
-                      Semua Jenis
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setTypeFilter('NKV')}>
-                      Hanya NKV
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setTypeFilter('Dokter Hewan')}>
-                      Hanya Dokter Hewan
-                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setTypeFilter('all')}>Semua Jenis</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setTypeFilter('NKV')}>Hanya NKV</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setTypeFilter('Dokter Hewan')}>Hanya Dokter Hewan</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
 
-              {/* Table */}
               <div className="border rounded-lg overflow-hidden">
                 <Table>
                   <TableHeader>
@@ -377,7 +485,11 @@ export default function AdminPage() {
                       </TableRow>
                     ) : (
                       filteredRegistrations.map((reg) => (
-                        <TableRow key={reg.id} className="hover:bg-blue-50/50">
+                        <TableRow
+                          key={reg.id}
+                          className="hover:bg-blue-50/50 cursor-pointer"
+                          onClick={() => fetchDocuments(reg)}
+                        >
                           <TableCell className="font-mono text-sm">{reg.registration_number}</TableCell>
                           <TableCell>
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -400,7 +512,7 @@ export default function AdminPage() {
                               {STATUS_LABELS[reg.status] || reg.status}
                             </span>
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="sm">
@@ -408,13 +520,34 @@ export default function AdminPage() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => router.push(`/tracking/${reg.registration_number}`)}>
+                                <DropdownMenuItem onClick={() => fetchDocuments(reg)}>
                                   <Eye className="w-4 h-4 mr-2" />
-                                  Lihat Detail
+                                  Lihat Dokumen
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => router.push(`/admin/verification?registration=${reg.registration_number}`)}>
-                                  <FileText className="w-4 h-4 mr-2" />
-                                  Verifikasi
+                                {reg.status === 'submitted' && (
+                                  <DropdownMenuItem onClick={() => openVerifyModal(reg)}>
+                                    <CheckCircle className="w-4 h-4 mr-2" />
+                                    Verifikasi Dokumen
+                                  </DropdownMenuItem>
+                                )}
+                                {reg.status === 'document_verification' && (
+                                  <DropdownMenuItem onClick={() => router.push(`/admin/verification?registration=${reg.registration_number}`)}>
+                                    <FileText className="w-4 h-4 mr-2" />
+                                    Jadwalkan Pemeriksaan
+                                  </DropdownMenuItem>
+                                )}
+                                {reg.status === 'field_inspection' && (
+                                  <DropdownMenuItem onClick={() => router.push(`/admin/assessment?registration=${reg.registration_number}`)}>
+                                    <ClipboardCheck className="w-4 h-4 mr-2" />
+                                    Penilaian
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem
+                                  onClick={() => openDeleteModal(reg)}
+                                  className="text-red-600 focus:text-red-600"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Hapus Permohonan
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -428,6 +561,192 @@ export default function AdminPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Documents Viewer Modal */}
+        <Modal isOpen={modal.open && modal.type === 'documents'} onClose={closeModal} className="max-w-4xl max-h-[80vh]">
+          <ModalHeader>
+            <ModalTitle className="text-blue-900">
+              Dokumen Uploaded - {modal.registration?.registration_number}
+            </ModalTitle>
+            <p className="text-sm text-gray-500">
+              {modal.registration?.type === 'NKV' ? 'NKV' : 'Dokter Hewan'} • {modal.registration?.applicant_name}
+            </p>
+          </ModalHeader>
+          <ModalContent>
+            {loadingDocs ? (
+              <div className="py-8 text-center text-gray-500">Memuat dokumen...</div>
+            ) : documents.length === 0 ? (
+              <div className="py-8 text-center text-gray-500">
+                <AlertCircle className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                <p>Tidak ada dokumen diupload</p>
+              </div>
+            ) : (
+              <>
+                <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    Total {documents.length} dokumen • 
+                    {(() => {
+                      const verifiedCount = documents.filter(d => d.verified).length
+                      return ` ${verifiedCount} sudah diverifikasi`
+                    })()}
+                    {modal.registration?.status === 'submitted' && (
+                      <span className="ml-2 text-orange-600 font-medium">
+                        • Menunggu verifikasi Anda
+                      </span>
+                    )}
+                  </p>
+                </div>
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {documents.map((doc) => (
+                    <Card key={doc.id} className="border-blue-100">
+                      <CardContent className="p-4 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          {getFileIcon(doc.document_type)}
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-sm">{doc.document_type}</p>
+                              {doc.verified !== undefined && (
+                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                                  doc.verified 
+                                    ? 'bg-green-100 text-green-700' 
+                                    : 'bg-yellow-100 text-yellow-700'
+                                }`}>
+                                  {doc.verified ? '✓ Terverifikasi' : '⏳ Belum'}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500">{doc.file_name}</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => window.open(doc.file_url, '_blank')}
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            Buka
+                          </Button>
+                          {doc.file_url.match(/\.(pdf)$/i) && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                const win = window.open(doc.file_url, '_blank')
+                                if (win) setTimeout(() => win.print(), 500)
+                              }}
+                            >
+                              Cetak
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </>
+            )}
+          </ModalContent>
+          <ModalFooter>
+            <Button variant="outline" onClick={closeModal}>
+              Tutup
+            </Button>
+          </ModalFooter>
+        </Modal>
+
+        {/* Verification Modal */}
+        <Modal isOpen={modal.open && modal.type === 'verify'} onClose={closeModal} className="max-w-md">
+          <ModalHeader>
+            <ModalTitle className="text-blue-900">Verifikasi Dokumen</ModalTitle>
+            <p className="text-sm text-gray-500">
+              {modal.registration?.registration_number} • {modal.registration?.applicant_name}
+            </p>
+          </ModalHeader>
+          <ModalContent>
+            <div className="space-y-4">
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant={verifyAction === 'approve' ? 'default' : 'outline'}
+                  className={`flex-1 ${verifyAction === 'approve' ? 'bg-green-600 hover:bg-green-700' : ''}`}
+                  onClick={() => setVerifyAction('approve')}
+                >
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Sesuai
+                </Button>
+                <Button
+                  type="button"
+                  variant={verifyAction === 'reject' ? 'default' : 'outline'}
+                  className={`flex-1 ${verifyAction === 'reject' ? 'bg-red-600 hover:bg-red-700' : ''}`}
+                  onClick={() => setVerifyAction('reject')}
+                >
+                  <XCircle className="w-4 h-4 mr-2" />
+                  Perbaikan
+                </Button>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Catatan Verifikasi <span className="text-red-500">*</span>
+                </label>
+                <Textarea
+                  value={verifyNotes}
+                  onChange={(e) => setVerifyNotes(e.target.value)}
+                  placeholder={verifyAction === 'approve'
+                    ? 'Contoh: Dokumen telah diverifikasi dan sesuai ketentuan.'
+                    : 'Contoh: Dokumen masih kurang/menyimpang. Harap perbaiki...'}
+                  rows={4}
+                />
+              </div>
+            </div>
+          </ModalContent>
+          <ModalFooter>
+            <Button variant="outline" onClick={closeModal}>
+              Batal
+            </Button>
+            <Button
+              onClick={submitVerification}
+              disabled={!verifyNotes.trim() || submitting}
+              className={verifyAction === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}
+            >
+              {submitting ? 'Memproses...' : verifyAction === 'approve' ? 'Setujui' : 'Minta Perbaikan'}
+            </Button>
+          </ModalFooter>
+        </Modal>
+
+        {/* Delete Confirmation Modal */}
+        <Modal isOpen={modal.open && modal.type === 'delete'} onClose={closeModal} className="max-w-md">
+          <ModalHeader>
+            <ModalTitle className="text-red-900">Hapus Permohonan</ModalTitle>
+            <p className="text-sm text-gray-500">
+              {modal.registration?.registration_number} • {modal.registration?.applicant_name}
+            </p>
+          </ModalHeader>
+          <ModalContent>
+            <div className="py-2">
+              <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-3" />
+              <p className="text-gray-700 text-center">
+                Apakah Anda yakin ingin menghapus permohonan ini?
+              </p>
+              <p className="text-sm text-gray-500 text-center mt-1">
+                Tindakan ini akan menghapus semua data terkait (dokumen, log tracking, jadwal pemeriksaan)
+                dan tidak dapat dibatalkan.
+              </p>
+            </div>
+          </ModalContent>
+          <ModalFooter>
+            <Button variant="outline" onClick={closeModal} disabled={deleting}>
+              Batal
+            </Button>
+            <Button
+              onClick={submitDelete}
+              disabled={deleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleting ? 'Menghapus...' : 'Ya, Hapus Permohonan'}
+            </Button>
+          </ModalFooter>
+        </Modal>
       </main>
     </div>
   )

@@ -50,7 +50,7 @@ export async function POST(
   const newStatus = isApproved ? 'approved' : 'rejected'
 
   // Update registration
-  const updateData: any = {
+  const updateData: Record<string, unknown> = {
     status: newStatus,
     assessment_score,
     assessment_notes,
