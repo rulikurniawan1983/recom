@@ -52,7 +52,7 @@ export async function GET(
       // Fetch NKV documents from registration_documents table
       const { data: docs, error } = await serviceSupabase
         .from('registration_documents')
-        .select('id, document_type, file_url, file_name, verified')
+        .select('id, document_type, file_url, file_name, status, admin_notes, verified_at')
         .eq('registration_id', id)
         .eq('registration_type', 'nkv')
 
