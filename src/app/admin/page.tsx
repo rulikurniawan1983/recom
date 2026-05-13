@@ -3,12 +3,12 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  BarChart3, 
-  CheckCircle, 
-  Clock, 
-  XCircle, 
-  FileText, 
+import {
+  BarChart3,
+  CheckCircle,
+  Clock,
+  XCircle,
+  FileText,
   Eye,
   Trash2,
   LayoutDashboard,
@@ -50,7 +50,6 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import RegistrationDetailModal from '@/components/registration-detail-modal';
 import { createClient as createServiceClient } from '@supabase/supabase-js';
 import type { RegistrationStatus, Profile, NKVRegistration, DokterHewanRegistration } from '@/lib/types';
@@ -230,9 +229,9 @@ export default function AdminPage() {
      );
    }, [users, searchQuery]);
 
-   // Computed variants for view toggle buttons
-   const dashboardVariant = viewMode === 'dashboard' ? 'default' : 'outline';
-   const applicationsVariant = viewMode === 'applications' ? 'default' : 'outline';
+// Computed variants for view toggle buttons
+// const dashboardVariant = viewMode === 'dashboard' ? 'default' : 'outline';
+// const applicationsVariant = viewMode === 'applications' ? 'default' : 'outline';
 
   const fetchData = useCallback(async () => {
     // Defer state updates to avoid synchronous setState in effect
@@ -402,13 +401,17 @@ export default function AdminPage() {
        setAssessOpen(true);
      };
 
-     const openDetailModal = async (reg: AdminRegistration) => {
-       setDetailLoading(true);
-       try {
-         // Use service role client to bypass RLS (admin viewing any registration)
-         const serviceSupabase = createServiceClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-           auth: { autoRefreshToken: false, persistSession: false }
-         });
+      const openDetailModal = async (reg: AdminRegistration) => {
+        setDetailLoading(true);
+        try {
+          // Check if service role key is available
+          if (!SUPABASE_SERVICE_ROLE_KEY) {
+            throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured. Please contact administrator.');
+          }
+          // Use service role client to bypass RLS (admin viewing any registration)
+          const serviceSupabase = createServiceClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+            auth: { autoRefreshToken: false, persistSession: false }
+          });
 
          let fullReg: Registration | null = null;
          if (reg.type === 'NKV') {
@@ -1532,10 +1535,10 @@ export default function AdminPage() {
                                <dt className="text-sm text-gray-600">Nomor Registrasi</dt>
                                <dd className="font-medium text-gray-900 mt-1">{selectedReg?.registration_number}</dd>
                              </div>
-                             <div>
-                               <dt className="text-sm text-gray-600">Jenis Layanan</dt>
-                               <dd className="mt-1">{selectedReg && getStatusBadge(selectedReg.type as any)}</dd>
-                             </div>
+                              <div>
+                                <dt className="text-sm text-gray-600">Jenis Layanan</dt>
+                                <dd className="mt-1">{selectedReg && getTypeBadge(selectedReg.type)}</dd>
+                              </div>
                              <div>
                                <dt className="text-sm text-gray-600">Status Saat Ini</dt>
                                <dd className="mt-1">{selectedReg && getStatusBadge(selectedReg.status)}</dd>
