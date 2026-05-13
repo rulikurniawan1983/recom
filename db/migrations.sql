@@ -91,7 +91,8 @@ create table if not exists registration_documents (
 -- Inspection schedules table
 create table if not exists inspection_schedules (
   id uuid primary key default uuid_generate_v4(),
-  registration_id uuid references nkv_registrations on delete cascade,
+  nkv_registration_id uuid references nkv_registrations on delete cascade,
+  dokter_hewan_registration_id uuid references dokter_hewan_registrations on delete cascade,
   inspector_id uuid references profiles,
   scheduled_date date,
   scheduled_time time,
@@ -99,6 +100,34 @@ create table if not exists inspection_schedules (
   status text check (status in ('scheduled', 'completed', 'cancelled')) default 'scheduled',
   notes text,
   created_at timestamp with time zone default now()
+);
+
+-- Enable RLS for inspection_schedules
+alter table inspection_schedules enable row level security;
+
+-- Inspection schedules policies
+-- Admins can view all inspection schedules
+create policy "Admins can view all inspection_schedules"
+on inspection_schedules for select
+to authenticated
+using (
+  exists (select 1 from profiles where id = auth.uid() and role = 'admin')
+);
+
+-- Admins can insert inspection schedules
+create policy "Admins can insert inspection_schedules"
+on inspection_schedules for insert
+to authenticated
+with check (
+  exists (select 1 from profiles where id = auth.uid() and role = 'admin')
+);
+
+-- Admins can update any inspection schedule
+create policy "Admins can update any inspection_schedules"
+on inspection_schedules for update
+to authenticated
+using (
+  exists (select 1 from profiles where id = auth.uid() and role = 'admin')
 );
 
 -- Create trigger for updated_at
@@ -165,6 +194,35 @@ create table if not exists tracking_logs (
   created_by uuid references profiles
 );
 
+-- Enable RLS for tracking_logs
+alter table tracking_logs enable row level security;
+
+-- Tracking logs policies: users can view logs for their own registrations
+create policy "Users can view tracking logs for their registrations"
+on tracking_logs for select
+to authenticated
+using (
+  nkv_registration_id in (select id from nkv_registrations where user_id = auth.uid())
+  or
+  dokter_hewan_registration_id in (select id from dokter_hewan_registrations where user_id = auth.uid())
+);
+
+-- Admins can view all tracking logs
+create policy "Admins can view all tracking_logs"
+on tracking_logs for select
+to authenticated
+using (
+  exists (select 1 from profiles where id = auth.uid() and role = 'admin')
+);
+
+-- Admins can insert tracking logs
+create policy "Admins can insert tracking_logs"
+on tracking_logs for insert
+to authenticated
+with check (
+  exists (select 1 from profiles where id = auth.uid() and role = 'admin')
+);
+
 -- Comments table for admin notes
 create table if not exists registration_comments (
   id uuid primary key default uuid_generate_v4(),
@@ -173,6 +231,25 @@ create table if not exists registration_comments (
   admin_id uuid references profiles,
   comment text not null,
   created_at timestamp with time zone default now()
+);
+
+-- Enable RLS for registration_comments
+alter table registration_comments enable row level security;
+
+-- Admins can view all comments
+create policy "Admins can view all registration_comments"
+on registration_comments for select
+to authenticated
+using (
+  exists (select 1 from profiles where id = auth.uid() and role = 'admin')
+);
+
+-- Admins can insert comments
+create policy "Admins can insert registration_comments"
+on registration_comments for insert
+to authenticated
+with check (
+  exists (select 1 from profiles where id = auth.uid() and role = 'admin')
 );
 
 -- RLS policies for registrations
@@ -208,6 +285,58 @@ create policy "Users can update own nkv_registrations"
 on nkv_registrations for update
 to authenticated
 using (user_id = auth.uid());
+
+-- Admin policies: allow admins to view all registrations
+create policy "Admins can view all nkv_registrations"
+on nkv_registrations for select
+to authenticated
+using (
+  exists (
+    select 1 from profiles 
+    where id = auth.uid() and role = 'admin'
+  )
+);
+
+create policy "Admins can view all dokter_hewan_registrations"
+on dokter_hewan_registrations for select
+to authenticated
+using (
+  exists (
+    select 1 from profiles 
+    where id = auth.uid() and role = 'admin'
+  )
+);
+
+create policy "Admins can update any nkv_registrations"
+on nkv_registrations for update
+to authenticated
+using (
+  exists (
+    select 1 from profiles 
+    where id = auth.uid() and role = 'admin'
+  )
+);
+
+create policy "Admins can update any dokter_hewan_registrations"
+on dokter_hewan_registrations for update
+to authenticated
+using (
+  exists (
+    select 1 from profiles 
+    where id = auth.uid() and role = 'admin'
+  )
+);
+
+-- Public tracking policies (allow anonymous read for tracking modal)
+create policy "Public can view NKV registration by tracking number"
+on nkv_registrations for select
+to anon
+using (true);
+
+create policy "Public can view Dokter Hewan registration by tracking number"
+on dokter_hewan_registrations for select
+to anon
+using (true);
 
 -- Storage bucket for registration documents
 insert into storage.buckets (id, name, public) 
