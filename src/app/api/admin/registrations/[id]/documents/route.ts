@@ -41,7 +41,7 @@ export async function GET(
       auth: { autoRefreshToken: false, persistSession: false }
     })
 
-    // Try to find registration in NKV first
+    // Try NKV registration first
     const { data: nkvReg } = await serviceSupabase
       .from('nkv_registrations')
       .select('id')
@@ -49,12 +49,12 @@ export async function GET(
       .single()
 
     if (nkvReg) {
-      // Fetch NKV documents from registration_documents table
       const { data: docs, error } = await serviceSupabase
         .from('registration_documents')
-        .select('id, document_type, file_url, file_name, status, admin_notes, verified_at')
+        .select('id, document_type, file_url, file_name, status, admin_notes, verified_at, uploaded_at')
         .eq('registration_id', id)
         .eq('registration_type', 'nkv')
+        .order('uploaded_at', { ascending: true })
 
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 })
@@ -63,7 +63,7 @@ export async function GET(
       return NextResponse.json(docs || [])
     }
 
-    // Try Dokter Hewan
+    // Try Dokter Hewan registration
     const { data: dokterReg } = await serviceSupabase
       .from('dokter_hewan_registrations')
       .select('id')
@@ -71,7 +71,24 @@ export async function GET(
       .single()
 
     if (dokterReg) {
-      // For Dokter Hewan, fetch documents directly from registration record
+      // Try fetch from registration_documents first
+      const { data: docs, error } = await serviceSupabase
+        .from('registration_documents')
+        .select('id, document_type, file_url, file_name, status, admin_notes, verified_at, uploaded_at')
+        .eq('registration_id', id)
+        .eq('registration_type', 'dokter_hewan')
+        .order('uploaded_at', { ascending: true })
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+
+      // If records exist in registration_documents, return them
+      if (docs && docs.length > 0) {
+        return NextResponse.json(docs)
+      }
+
+      // Fallback: read from dokter_hewan_registrations columns (for legacy data)
       const { data: reg } = await serviceSupabase
         .from('dokter_hewan_registrations')
         .select(`
@@ -94,17 +111,20 @@ export async function GET(
         { field: 'professional_recommendation_url', label: 'Rekomendasi Profesional' }
       ] as const
 
-      const docs = docTypes
+      const fallbackDocs = docTypes
         .filter(doc => reg[doc.field])
         .map((doc, index) => ({
-          id: `dh-${id}-${index}`,
+          id: `dh-fallback-${id}-${index}`,
           document_type: doc.label,
           file_url: reg[doc.field],
-          file_name: doc.label.toLowerCase().replace(' ', '_') + '.pdf',
-          verified: false // DH documents don't have individual verification
+          file_name: `${doc.label.toLowerCase().replace(/\s+/g, '_')}.pdf`,
+          status: 'pending',
+          uploaded_at: new Date().toISOString(),
+          admin_notes: null,
+          verified_at: null,
         }))
 
-      return NextResponse.json(docs)
+      return NextResponse.json(fallbackDocs)
     }
 
     return NextResponse.json({ error: 'Registration not found' }, { status: 404 })

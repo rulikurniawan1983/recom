@@ -77,10 +77,10 @@ interface Document {
   document_type: string;
   file_url: string;
   file_name: string;
-  verified?: boolean;
+  status: 'pending' | 'approved' | 'rejected' | 'revision_requested';
   verified_at?: string;
-  status?: 'pending' | 'approved' | 'rejected' | 'revision_requested';
-  admin_notes?: string;
+  admin_notes?: string | null;
+  uploaded_at?: string;
 }
 
 const STATUS_LABELS: Record<RegistrationStatus, string> = {
@@ -1357,218 +1357,363 @@ export default function AdminPage() {
                     )}
                   </CardContent>
                 </Card>
-             </>
-           )}
+            </>
+          )}
 
-            {/* Main content closing tag for layout */}
+          {/* Close main content area */}
           </main>
-        </div> {/* Close inner wrapper div */}
+        </div> {/* Close inner wrapper */}
 
-          {/* Documents Modal */}
-          <Dialog open={showDocumentsModal} onOpenChange={(open) => {
-              if (!open) {
-                setShowDocumentsModal(false);
-                // Only clear selectedReg if no other modal is using it
-                if (!docActionOpen && !verifyOpen && !deleteOpen && !scheduleOpen && !assessOpen) {
-                  setSelectedReg(null);
-                }
-              }
-            }}>
-              <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Detail Permohonan</DialogTitle>
-                  <DialogDescription>
-                    {selectedReg?.registration_number} • {selectedReg?.type}
-                  </DialogDescription>
-                </DialogHeader>
+        {/* Documents Modal - Redesigned */}
+        <Dialog open={showDocumentsModal} onOpenChange={(open) => {
+             if (!open) {
+               setShowDocumentsModal(false);
+               setDocumentsTab('documents');
+               if (!docActionOpen && !verifyOpen && !deleteOpen && !scheduleOpen && !assessOpen) {
+                 setSelectedReg(null);
+               }
+             }
+           }}>
+             <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+               <DialogHeader className="border-b pb-4">
+                 <div className="flex items-start justify-between">
+                   <div>
+                     <DialogTitle className="text-xl font-bold text-gray-900">
+                       {selectedReg?.registration_number}
+                     </DialogTitle>
+                     <div className="flex items-center gap-2 mt-1">
+                       <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                         {selectedReg?.type}
+                       </Badge>
+                       {selectedReg && getStatusBadge(selectedReg.status)}
+                     </div>
+                   </div>
+                 </div>
+               </DialogHeader>
 
-                <Tabs value={documentsTab} onValueChange={setDocumentsTab} defaultValue="documents">
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="documents">Dokumen</TabsTrigger>
-                    <TabsTrigger value="info">Informasi</TabsTrigger>
-                    <TabsTrigger value="history">Riwayat</TabsTrigger>
-                  </TabsList>
+               {/* Quick Action Banner - NKV Ready to Schedule */}
+               {selectedReg?.type === 'NKV' && selectedReg.status === 'document_verification' && documents.length > 0 && (
+                 <div className={`mx-6 mt-4 p-4 rounded-lg border ${
+                   documents.every(doc => doc.status === 'approved')
+                     ? 'bg-green-50 border-green-200'
+                     : 'bg-yellow-50 border-yellow-200'
+                 }`}>
+                   <div className="flex items-center justify-between">
+                     <div className="flex items-center gap-2">
+                       {documents.every(doc => doc.status === 'approved') ? (
+                         <>
+                           <CheckCircle className="h-5 w-5 text-green-600" />
+                           <span className="font-medium text-green-800">
+                             Semua dokumen diverifikasi. Siap untuk pemeriksaan lapangan.
+                           </span>
+                         </>
+                       ) : (
+                         <>
+                           <Clock className="h-5 w-5 text-yellow-600" />
+                           <span className="font-medium text-yellow-800">
+                             {documents.filter(d => d.status === 'approved').length} dari {documents.length} dokumen diverifikasi
+                           </span>
+                         </>
+                       )}
+                     </div>
+                     {documents.every(doc => doc.status === 'approved') && (
+                       <Button
+                         size="sm"
+                         onClick={() => {
+                           setShowDocumentsModal(false);
+                           openScheduleModal(selectedReg!);
+                         }}
+                         className="bg-blue-600 hover:bg-blue-700"
+                       >
+                         <Calendar className="h-4 w-4 mr-2" />
+                         Jadwalkan Sekarang
+                       </Button>
+                     )}
+                   </div>
+                 </div>
+               )}
 
-                  <TabsContent value="documents" className="space-y-4 mt-4">
-                    {/* Status Banner */}
-                    {selectedReg?.type === 'NKV' && selectedReg.status === 'document_verification' && documents.length > 0 && (
-                      <div className={`p-4 rounded-lg border ${
-                        documents.every(doc => doc.status === 'approved')
-                          ? 'bg-green-50 border-green-200'
-                          : 'bg-yellow-50 border-yellow-200'
-                      }`}>
-                        <div className="flex items-center gap-2">
-                          {documents.every(doc => doc.status === 'approved') ? (
-                            <>
-                              <CheckCircle className="h-5 w-5 text-green-600" />
-                              <span className="font-medium text-green-800">
-                                Semua dokumen telah diverifikasi. Siap untuk menjadwalkan pemeriksaan lapangan.
-                              </span>
-                            </>
-                          ) : (
-                            <>
-                              <Clock className="h-5 w-5 text-yellow-600" />
-                              <span className="font-medium text-yellow-800">
-                                Dokumen masih memerlukan verifikasi. Lengkapi verifikasi semua dokumen.
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {loadingDocs ? (
-                      <div className="space-y-2">
-                        {[...Array(3)].map((_, i) => (
-                          <div key={i} className="h-12 bg-gray-100 rounded animate-pulse" />
-                        ))}
-                      </div>
-                    ) : documents.length === 0 ? (
-                      <p className="text-center text-gray-500 py-8">Belum ada dokumen</p>
-                    ) : (
-                      <div className="space-y-3">
-                        {documents.map((doc) => (
-                          <div
-                            key={doc.id}
-                            className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                            onClick={() => openDocPreview(doc)}
-                          >
-                            <div className="flex items-center gap-3 flex-1">
-                              <File className="h-10 w-10 text-blue-600 flex-shrink-0" />
-                              <div className="flex-1 min-w-0">
-                              <p className="font-medium text-gray-900">{doc.document_type}</p>
-                                <p className="text-sm text-gray-500 truncate">{doc.file_name}</p>
-                                {doc.admin_notes && (
-                                  <p className="text-xs text-gray-600 mt-1 italic">Catatan: {doc.admin_notes}</p>
-                                )}
-                                <div className="flex items-center gap-2 mt-2">
-                                  {getDocStatusBadge(doc.status ?? 'pending')}
-                                  {doc.verified_at && (
-                                    <span className="text-xs text-gray-500">
-                                      Diverifikasi: {new Date(doc.verified_at).toLocaleDateString('id-ID')}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 ml-4" onClick={(e) => e.stopPropagation()}>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openDocPreview(doc)}
-                              >
-                                <Eye className="h-4 w-4 mr-1" />
-                                Lihat
-                              </Button>
-                              {/* Show action buttons only for NKV documents */}
-                              {selectedReg?.type === 'NKV' && doc.status !== 'approved' && (
-                                <>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="text-green-600 border-green-200 hover:bg-green-50"
-                                    onClick={() => openDocActionModal(doc, 'approve')}
-                                  >
-                                    <CheckCircle className="h-4 w-4 mr-1" />
-                                    Setujui
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="text-orange-600 border-orange-200 hover:bg-orange-50"
-                                    onClick={() => openDocActionModal(doc, 'revision')}
-                                  >
-                                    <Clock className="h-4 w-4 mr-1" />
-                                    Revisi
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="text-red-600 border-red-200 hover:bg-red-50"
-                                    onClick={() => openDocActionModal(doc, 'reject')}
-                                  >
-                                    <XCircle className="h-4 w-4 mr-1" />
-                                    Tolak
-                                  </Button>
-                                </>
-                              )}
-                              {selectedReg?.type === 'NKV' && doc.status === 'approved' && (
-                                <CheckCircle className="h-5 w-5 text-green-600" />
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </TabsContent>
-
-                  <TabsContent value="info" className="mt-4">
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm font-medium text-gray-600">Nomor Registrasi</p>
-                          <p className="text-gray-900">{selectedReg?.registration_number}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-600">Jenis</p>
-                          <p>{selectedReg?.type}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-600">Status</p>
-                          <p>{selectedReg && getStatusBadge(selectedReg.status)}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-600">Tanggal Pembuatan</p>
-                          <p>{selectedReg && new Date(selectedReg.created_at).toLocaleDateString('id-ID')}</p>
-                        </div>
-                      </div>
-                      <div className="space-y-2 pt-4 border-t">
-                        <p className="text-sm font-medium text-gray-600">Nama Pemohon / Unit Usaha</p>
-                        <p className="text-lg font-semibold text-gray-900">{selectedReg?.applicant_name}</p>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm font-medium text-gray-600">Email</p>
-                          <p className="text-blue-600">{selectedReg?.email || '-'}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-600">Telepon</p>
-                          <p>{selectedReg?.phone || '-'}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="history" className="mt-4">
-                    <p className="text-center text-gray-500 py-8">Riwayat status akan segera tersedia</p>
-                  </TabsContent>
-                </Tabs>
-
-                 <DialogFooter>
-                   {/* Show "Jadwalkan Pemeriksaan" button when all NKV documents are approved */}
-                   {selectedReg?.type === 'NKV' && selectedReg.status === 'document_verification' && documents.length > 0 && documents.every(doc => doc.status === 'approved') && (
-                     <Button
-                       variant="default"
-                       onClick={() => {
-                         setShowDocumentsModal(false);
-                         openScheduleModal(selectedReg!);
-                       }}
-                       className="bg-blue-600 hover:bg-blue-700 mr-auto"
-                     >
-                       <Calendar className="h-4 w-4 mr-2" />
-                       Jadwalkan Pemeriksaan Lapangan
-                     </Button>
-                   )}
-                   <Button
-                     variant="outline"
-                     onClick={() => setSelectedReg(null)}
-                     className="text-black border-gray-300 hover:bg-gray-100"
+               {/* Main Content Tabs */}
+               <div className="mt-6">
+                 <div className="flex border-b">
+                   <button
+                     onClick={() => setDocumentsTab('documents')}
+                     className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                       documentsTab === 'documents'
+                         ? 'border-blue-600 text-blue-600'
+                         : 'border-transparent text-gray-500 hover:text-gray-700'
+                     }`}
                    >
-                     Tutup
+                     <File className="h-4 w-4 inline mr-2" />
+                     Dokumen ({documents.length})
+                   </button>
+                   <button
+                     onClick={() => setDocumentsTab('info')}
+                     className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                       documentsTab === 'info'
+                         ? 'border-blue-600 text-blue-600'
+                         : 'border-transparent text-gray-500 hover:text-gray-700'
+                     }`}
+                   >
+                     <FileText className="h-4 w-4 inline mr-2" />
+                     Informasi Permohonan
+                   </button>
+                 </div>
+
+                 {/* TAB: DOKUMEN */}
+                 {documentsTab === 'documents' && (
+                   <div className="p-6">
+                     {loadingDocs ? (
+                       <div className="space-y-3">
+                         {[...Array(3)].map((_, i) => (
+                           <div key={i} className="h-20 bg-gray-100 rounded-lg animate-pulse" />
+                         ))}
+                       </div>
+                     ) : documents.length === 0 ? (
+                       <div className="text-center py-12">
+                         <File className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                         <p className="text-gray-500">Belum ada dokumen diunggah</p>
+                       </div>
+                     ) : (
+                       <div className="space-y-4">
+                         {documents.map((doc) => (
+                           <div
+                             key={doc.id}
+                             className="border rounded-lg overflow-hidden transition-all hover:shadow-md"
+                           >
+                             {/* Document Header */}
+                             <div
+                               className="flex items-center justify-between p-4 bg-gray-50 cursor-pointer"
+                               onClick={() => openDocPreview(doc)}
+                             >
+                               <div className="flex items-center gap-4 flex-1">
+                                 <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg">
+                                   <File className="h-6 w-6 text-blue-600" />
+                                 </div>
+                                 <div className="flex-1">
+                                   <h4 className="font-semibold text-gray-900">{doc.document_type}</h4>
+                                   <p className="text-sm text-gray-500 truncate max-w-md">{doc.file_name}</p>
+                                    <div className="flex items-center gap-3 mt-1">
+                                      {getDocStatusBadge(doc.status ?? 'pending')}
+                                      {doc.verified_at && (
+                                        <span className="text-xs text-gray-400">
+                                          Diverifikasi: {new Date(doc.verified_at).toLocaleDateString('id-ID')}
+                                        </span>
+                                      )}
+                                      {doc.uploaded_at && !doc.verified_at && (
+                                        <span className="text-xs text-gray-400">
+                                          Diunggah: {new Date(doc.uploaded_at).toLocaleDateString('id-ID')}
+                                        </span>
+                                      )}
+                                    </div>
+                                 </div>
+                               </div>
+                               <div className="flex items-center gap-2 ml-4">
+                                 <Button
+                                   variant="ghost"
+                                   size="sm"
+                                   onClick={(e) => {
+                                     e.stopPropagation();
+                                     openDocPreview(doc);
+                                   }}
+                                   className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                 >
+                                   <Eye className="h-4 w-4 mr-1" />
+                                   Preview
+                                 </Button>
+                                 {selectedReg?.type === 'NKV' && doc.status !== 'approved' && (
+                                   <>
+                                     <Button
+                                       variant="ghost"
+                                       size="sm"
+                                       onClick={(e) => {
+                                         e.stopPropagation();
+                                         openDocActionModal(doc, 'approve');
+                                       }}
+                                       className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                     >
+                                       <CheckCircle className="h-4 w-4 mr-1" />
+                                       Setujui
+                                     </Button>
+                                     <Button
+                                       variant="ghost"
+                                       size="sm"
+                                       onClick={(e) => {
+                                         e.stopPropagation();
+                                         openDocActionModal(doc, 'revision');
+                                       }}
+                                       className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                     >
+                                       <Clock className="h-4 w-4 mr-1" />
+                                       Revisi
+                                     </Button>
+                                     <Button
+                                       variant="ghost"
+                                       size="sm"
+                                       onClick={(e) => {
+                                         e.stopPropagation();
+                                         openDocActionModal(doc, 'reject');
+                                       }}
+                                       className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                     >
+                                       <XCircle className="h-4 w-4 mr-1" />
+                                       Tolak
+                                     </Button>
+                                   </>
+                                 )}
+                                 {selectedReg?.type === 'NKV' && doc.status === 'approved' && (
+                                   <CheckCircle className="h-5 w-5 text-green-600" />
+                                 )}
+                               </div>
+                             </div>
+                             {/* Admin Notes */}
+                             {doc.admin_notes && (
+                               <div className="px-4 py-2 bg-amber-50 border-t border-amber-100">
+                                 <p className="text-xs text-amber-800">
+                                   <span className="font-medium">Catatan Admin:</span> {doc.admin_notes}
+                                 </p>
+                               </div>
+                             )}
+                           </div>
+                         ))}
+                       </div>
+                     )}
+                   </div>
+                 )}
+
+                 {/* TAB: INFORMASI PERMOHONAN */}
+                 {documentsTab === 'info' && (
+                   <div className="p-6">
+                     <div className="grid grid-cols-2 gap-6">
+                       <div className="space-y-6">
+                         <div>
+                           <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                             Detail Pemohon
+                           </h4>
+                           <dl className="space-y-3">
+                             <div>
+                               <dt className="text-sm text-gray-600">Nama Lengkap</dt>
+                               <dd className="font-medium text-gray-900 mt-1">{selectedReg?.applicant_name}</dd>
+                             </div>
+                             <div>
+                               <dt className="text-sm text-gray-600">Email</dt>
+                               <dd className="font-medium text-gray-900 mt-1">{selectedReg?.email}</dd>
+                             </div>
+                             <div>
+                               <dt className="text-sm text-gray-600">Telepon</dt>
+                               <dd className="font-medium text-gray-900 mt-1">{selectedReg?.phone}</dd>
+                             </div>
+                           </dl>
+                         </div>
+                       </div>
+
+                       <div className="space-y-6">
+                         <div>
+                           <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                             Detail Permohonan
+                           </h4>
+                           <dl className="space-y-3">
+                             <div>
+                               <dt className="text-sm text-gray-600">Nomor Registrasi</dt>
+                               <dd className="font-medium text-gray-900 mt-1">{selectedReg?.registration_number}</dd>
+                             </div>
+                             <div>
+                               <dt className="text-sm text-gray-600">Jenis Layanan</dt>
+                               <dd className="mt-1">{selectedReg && getStatusBadge(selectedReg.type as any)}</dd>
+                             </div>
+                             <div>
+                               <dt className="text-sm text-gray-600">Status Saat Ini</dt>
+                               <dd className="mt-1">{selectedReg && getStatusBadge(selectedReg.status)}</dd>
+                             </div>
+                             <div>
+                               <dt className="text-sm text-gray-600">Tanggal Diajukan</dt>
+                               <dd className="font-medium text-gray-900 mt-1">
+                                 {selectedReg && new Date(selectedReg.created_at).toLocaleDateString('id-ID', {
+                                   day: 'numeric',
+                                   month: 'long',
+                                   year: 'numeric',
+                                   hour: '2-digit',
+                                   minute: '2-digit'
+                                 })}
+                               </dd>
+                             </div>
+                           </dl>
+                         </div>
+                       </div>
+                     </div>
+                   </div>
+                 )}
+
+                 {/* TAB: RIWAYAT */}
+                 {documentsTab === 'history' && (
+                   <div className="p-6">
+                     <div className="text-center py-12">
+                       <Clock className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                       <p className="text-gray-500">Riwayat status dan aktivitas akan segera tersedia.</p>
+                     </div>
+                   </div>
+                 )}
+               </div>
+
+               {/* Footer Actions */}
+               <DialogFooter className="gap-2 sm:gap-0">
+                 {/* Jadwalkan button - only show when all NKV docs approved */}
+                 {selectedReg?.type === 'NKV' && selectedReg.status === 'document_verification' && documents.length > 0 && documents.every(doc => doc.status === 'approved') && (
+                   <Button
+                     variant="default"
+                     onClick={() => {
+                       setShowDocumentsModal(false);
+                       openScheduleModal(selectedReg!);
+                     }}
+                     className="bg-blue-600 hover:bg-blue-700"
+                   >
+                     <Calendar className="h-4 w-4 mr-2" />
+                     Jadwalkan Pemeriksaan Lapangan
                    </Button>
-                 </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                 )}
+                 
+                 {/* Other actions based on status */}
+                 {selectedReg?.status === 'submitted' && (
+                   <Button
+                     variant="default"
+                     onClick={() => {
+                       setShowDocumentsModal(false);
+                       openVerifyModal(selectedReg!, 'approve');
+                     }}
+                     className="bg-green-600 hover:bg-green-700"
+                   >
+                     <CheckCircle className="h-4 w-4 mr-2" />
+                     Verifikasi Dokumen
+                   </Button>
+                 )}
+
+                 {(selectedReg?.status === 'field_inspection' || selectedReg?.status === 'assessment') && (
+                   <Button
+                     variant="default"
+                     onClick={() => {
+                       setShowDocumentsModal(false);
+                       openAssessModal(selectedReg!);
+                     }}
+                     className="bg-purple-600 hover:bg-purple-700"
+                   >
+                     <ClipboardCheck className="h-4 w-4 mr-2" />
+                     Input Penilaian
+                   </Button>
+                 )}
+
+                 <Button
+                   variant="outline"
+                   onClick={() => {
+                     setShowDocumentsModal(false);
+                     setSelectedReg(null);
+                   }}
+                   className="text-black border-gray-300 hover:bg-gray-100"
+                 >
+                   Tutup
+                 </Button>
+               </DialogFooter>
+             </DialogContent>
+           </Dialog>
 
             {/* Verification Modal */}
             <Dialog open={verifyOpen} onOpenChange={setVerifyOpen}>

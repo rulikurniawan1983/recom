@@ -63,25 +63,25 @@ export default function DokterHewanRegistrationForm() {
      e.preventDefault()
      setLoading(true)
      setError(null)
- 
+
      try {
        const { data: { user } } = await supabase.auth.getUser()
-       
+
        if (!user) {
          router.push('/login')
          return
        }
- 
+
        // Generate tracking code
        const year = new Date().getFullYear()
        const random = Math.random().toString(36).substr(2, 6).toUpperCase()
        const regNumber = `DKH-${year}-${random}`
-       
+
        // Upload documents and get URLs
        const documentUrls = await uploadDocuments(formData.documents, regNumber)
-       
+
        // Save to Supabase with document URLs
-       const { error: submitError } = await supabase
+       const { data: registration, error: submitError } = await supabase
          .from('dokter_hewan_registrations')
          .insert({
            user_id: user.id,
@@ -100,19 +100,61 @@ export default function DokterHewanRegistrationForm() {
            created_at: new Date().toISOString(),
            updated_at: new Date().toISOString(),
          })
- 
+         .select()
+         .single()
+
        if (submitError) throw submitError
- 
+
+       // Save document records to registration_documents table
+       if (registration) {
+         await saveDocumentRecords(registration.id, documentUrls)
+       }
+
        setTrackingCode(regNumber)
        setShowSuccess(true)
      } catch (err) {
        console.error('Registration error:', err)
-       const errorMessage = err && typeof err === 'object' && 'message' in err 
-         ? String((err as { message?: string }).message) 
+       const errorMessage = err && typeof err === 'object' && 'message' in err
+         ? String((err as { message?: string }).message)
          : 'Gagal menyimpan pendaftaran'
        setError(errorMessage)
      } finally {
        setLoading(false)
+     }
+   }
+
+   const saveDocumentRecords = async (
+     registrationId: string,
+     documentUrls: Record<string, string | null>
+   ) => {
+     const docTypes = [
+       { key: 'colorPhoto', label: 'Pas Photo' },
+       { key: 'diploma', label: 'Ijazah' },
+       { key: 'competencyCert', label: 'Sertifikat Kompetensi' },
+       { key: 'professionalRecommendation', label: 'Rekomendasi Profesional' },
+     ] as const
+
+     const records = docTypes
+       .filter(doc => documentUrls[doc.key])
+       .map(doc => ({
+         registration_id: registrationId,
+         registration_type: 'dokter_hewan',
+         document_type: doc.label,
+         file_url: documentUrls[doc.key]!,
+         file_name: `${doc.label.toLowerCase().replace(/\s+/g, '_')}.pdf`,
+         status: 'pending',
+         uploaded_at: new Date().toISOString(),
+         admin_notes: null,
+       }))
+
+     if (records.length === 0) return
+
+     const { error } = await supabase
+       .from('registration_documents')
+       .insert(records)
+
+     if (error) {
+       console.error('Failed to save document records:', error)
      }
    }
 

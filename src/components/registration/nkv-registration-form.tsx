@@ -81,60 +81,102 @@ export default function NKVRegistrationForm() {
     })
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
+   const handleSubmit = async (e: React.FormEvent) => {
+     e.preventDefault()
+     setLoading(true)
+     setError(null)
 
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        router.push('/login')
-        return
-      }
+     try {
+       const { data: { user } } = await supabase.auth.getUser()
 
-      // Generate tracking code
-      const year = new Date().getFullYear()
-      const random = Math.random().toString(36).substr(2, 6).toUpperCase()
-      const regNumber = `NKV-${year}-${random}`
-      
-      // Upload documents and get URLs
-      const documentUrls = await uploadDocuments(formData.documents, regNumber)
-      
-      // Save to Supabase with document URLs
-      const { error: submitError } = await supabase
-        .from('nkv_registrations')
-        .insert({
-          user_id: user.id,
-          registration_number: regNumber,
-          business_name: formData.businessName,
-          business_address: formData.businessAddress,
-          business_phone: formData.businessPhone,
-          business_email: formData.businessEmail,
-          business_type: formData.businessType,
-          product_type: formData.productId,
-          product_description: formData.productDescription,
-          recommendation_file_url: documentUrls.businessLicense, // For now, using business license as recommendation
-          status: 'submitted',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
+       if (!user) {
+         router.push('/login')
+         return
+       }
 
-      if (submitError) throw submitError
+       // Generate tracking code
+       const year = new Date().getFullYear()
+       const random = Math.random().toString(36).substr(2, 6).toUpperCase()
+       const regNumber = `NKV-${year}-${random}`
 
-      setTrackingCode(regNumber)
-      setShowSuccess(true)
-    } catch (err) {
-      console.error('Registration error:', err)
-      const errorMessage = err && typeof err === 'object' && 'message' in err 
-        ? String((err as { message?: string }).message) 
-        : 'Gagal menyimpan pendaftaran'
-      setError(errorMessage)
-    } finally {
-      setLoading(false)
-    }
-  }
+       // Upload documents and get URLs
+       const documentUrls = await uploadDocuments(formData.documents, regNumber)
+
+       // Save to Supabase with document URLs
+       const { data: registration, error: submitError } = await supabase
+         .from('nkv_registrations')
+         .insert({
+           user_id: user.id,
+           registration_number: regNumber,
+           business_name: formData.businessName,
+           business_address: formData.businessAddress,
+           business_phone: formData.businessPhone,
+           business_email: formData.businessEmail,
+           business_type: formData.businessType,
+           product_type: formData.productId,
+           product_description: formData.productDescription,
+           recommendation_file_url: documentUrls.businessLicense,
+           status: 'submitted',
+           created_at: new Date().toISOString(),
+           updated_at: new Date().toISOString(),
+         })
+         .select()
+         .single()
+
+       if (submitError) throw submitError
+
+       // Save document records to registration_documents table
+       if (registration) {
+         await saveDocumentRecords(registration.id, documentUrls)
+       }
+
+       setTrackingCode(regNumber)
+       setShowSuccess(true)
+     } catch (err) {
+       console.error('Registration error:', err)
+       const errorMessage = err && typeof err === 'object' && 'message' in err
+         ? String((err as { message?: string }).message)
+         : 'Gagal menyimpan pendaftaran'
+       setError(errorMessage)
+     } finally {
+       setLoading(false)
+     }
+   }
+
+   const saveDocumentRecords = async (
+     registrationId: string,
+     documentUrls: Record<string, string | null>
+   ) => {
+     const docTypes = [
+       { key: 'businessLicense', label: 'Surat Izin Usaha (SIUP)' },
+       { key: 'vetCertificate', label: 'Sertifikat Veteriner' },
+       { key: 'sanitaryCert', label: 'Sertifikat Sanitasi' },
+       { key: 'otherDocs', label: 'Dokumen Pendukung Lain' },
+     ] as const
+
+      const records = docTypes
+        .filter(doc => documentUrls[doc.key])
+        .map(doc => ({
+          registration_id: registrationId,
+          registration_type: 'nkv',
+          document_type: doc.label,
+          file_url: documentUrls[doc.key]!,
+          file_name: `${doc.label.toLowerCase().replace(/\s+/g, '_')}.pdf`,
+          status: 'pending',
+          uploaded_at: new Date().toISOString(),
+          admin_notes: null,
+        }))
+
+     if (records.length === 0) return
+
+     const { error } = await supabase
+       .from('registration_documents')
+       .insert(records)
+
+     if (error) {
+       console.error('Failed to save document records:', error)
+     }
+   }
 
   const uploadDocuments = async (
     documents: NKVFormData['documents'],

@@ -125,7 +125,7 @@ export interface RegistrationDocument {
   file_url: string
   file_name: string
   uploaded_at: string
-  verified: boolean
+  status: 'pending' | 'approved' | 'rejected' | 'revision_requested'
   verified_at?: string
   admin_notes?: string | null
 }
