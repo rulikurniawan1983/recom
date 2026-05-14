@@ -1,5 +1,7 @@
 # Sistem Rekomendasi Online
 
+Ruli Kurniawan, S.)t
+
 Sistem rekomendasi online untuk verifikasi dan penilaian dokumen, dengan alur kerja lengkap dari pengajuan permohonan hingga penerbitan rekomendasi.
 
 ---
