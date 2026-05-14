@@ -43,6 +43,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import RegistrationDetailModal from '@/components/registration-detail-modal'
+import { ServiceSelectionModal } from '@/components/service-selection-modal'
 import type { Profile, NKVRegistration, DokterHewanRegistration, RegistrationStatus } from '@/lib/types'
 
 type Registration = (NKVRegistration & { type: 'NKV' }) | (DokterHewanRegistration & { type: 'Dokter Hewan' })
@@ -87,6 +88,7 @@ export default function DashboardClient({ user, profile, nkvRegistrations, dokte
   const [showTrackingModal, setShowTrackingModal] = useState(false)
   const [trackingCode, setTrackingCode] = useState('')
   const [trackingResult, setTrackingResult] = useState<Registration | null>(null)
+  const [showServiceModal, setShowServiceModal] = useState(false)
 
   const allRegistrations: Registration[] = [
     ...nkvRegistrations.map(r => ({ ...r, type: 'NKV' as const })),
@@ -318,11 +320,17 @@ const handleResubmit = async (id: string, files?: Array<{ file_name: string; fil
 
           {/* Quick Actions */}
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <a href="/nkv/register" className="inline-flex items-center justify-center rounded-md text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 h-10 px-4 py-2 transition-colors">
-              <Plus className="h-4 w-4 mr-2" /> Permohonan NKV Baru
+            <button
+              onClick={() => setShowServiceModal(true)}
+              className="inline-flex items-center justify-center rounded-md text-sm font-medium bg-teal-600 text-white hover:bg-teal-700 h-10 px-4 py-2 transition-colors"
+            >
+              <Plus className="h-4 w-4 mr-2" /> Layanan Kesehatan Hewan
+            </button>
+            <a href="/nkv/register" className="inline-flex items-center justify-center rounded-md text-sm font-medium border border-blue-300 text-blue-700 hover:bg-blue-50 h-10 px-4 py-2 transition-colors">
+              <Plus className="h-4 w-4 mr-2" /> Permohonan NKV
             </a>
             <a href="/dokter-hewan/register" className="inline-flex items-center justify-center rounded-md text-sm font-medium border border-blue-300 text-blue-700 hover:bg-blue-50 h-10 px-4 py-2 transition-colors">
-              <Plus className="h-4 w-4 mr-2" /> Praktek Dokter Hewan Baru
+              <Plus className="h-4 w-4 mr-2" /> Praktek Dokter Hewan
             </a>
             <div className="flex-1" />
             <div className="flex gap-2">
@@ -445,61 +453,67 @@ const handleResubmit = async (id: string, files?: Array<{ file_name: string; fil
         </main>
       </div>
 
-      {/* Tracking Modal - Simplified inline version */}
-      {showTrackingModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-          <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Lacak Permohonan</h2>
-              <button onClick={() => { setShowTrackingModal(false); setTrackingResult(null); setTrackingCode(''); }} className="text-gray-400 hover:text-gray-600">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
+        {/* Tracking Modal - Simplified inline version */}
+        {showTrackingModal && (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+            <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-gray-900">Lacak Permohonan</h2>
+                <button onClick={() => { setShowTrackingModal(false); setTrackingResult(null); setTrackingCode(''); }} className="text-gray-400 hover:text-gray-600">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
 
-            {!trackingResult ? (
-              <>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="tracking-code">Nomor Registrasi</Label>
-                    <Input id="tracking-code" placeholder="Contoh: NKV-2024-ABC123" value={trackingCode} onChange={(e) => setTrackingCode(e.target.value)} className="text-center tracking-wider" />
+              {!trackingResult ? (
+                <>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="tracking-code">Nomor Registrasi</Label>
+                      <Input id="tracking-code" placeholder="Contoh: NKV-2024-ABC123" value={trackingCode} onChange={(e) => setTrackingCode(e.target.value)} className="text-center tracking-wider" />
+                    </div>
+                    <Button onClick={handleTrackFromModal} disabled={!trackingCode.trim()} className="w-full bg-blue-600 hover:bg-blue-700">
+                      <Search className="h-4 w-4 mr-2" /> Lacak
+                    </Button>
                   </div>
-                  <Button onClick={handleTrackFromModal} disabled={!trackingCode.trim()} className="w-full bg-blue-600 hover:bg-blue-700">
-                    <Search className="h-4 w-4 mr-2" /> Lacak
+                </>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600">Nomor Pendaftaran</p>
+                      <p className="font-semibold">{trackingResult.registration_number}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Jenis</p>
+                      <p className="font-semibold">{trackingResult.type}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Tanggal</p>
+                      <p className="font-semibold">{new Date(trackingResult.created_at).toLocaleDateString('id-ID')}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Status</p>
+                      {getTrackingStatusBadge(trackingResult.status)}
+                    </div>
+                  </div>
+                  {renderTrackingTimeline(trackingResult)}
+                  <Button variant="outline" onClick={() => { setTrackingResult(null); setTrackingCode(''); }} className="w-full">
+                    <ArrowLeft className="h-4 w-4 mr-2" /> Cari Lainnya
                   </Button>
                 </div>
-              </>
-            ) : (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Nomor Pendaftaran</p>
-                    <p className="font-semibold">{trackingResult.registration_number}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Jenis</p>
-                    <p className="font-semibold">{trackingResult.type}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Tanggal</p>
-                    <p className="font-semibold">{new Date(trackingResult.created_at).toLocaleDateString('id-ID')}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Status</p>
-                    {getTrackingStatusBadge(trackingResult.status)}
-                  </div>
-                </div>
-                {renderTrackingTimeline(trackingResult)}
-                <Button variant="outline" onClick={() => { setTrackingResult(null); setTrackingCode(''); }} className="w-full">
-                  <ArrowLeft className="h-4 w-4 mr-2" /> Cari Lainnya
-                </Button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
-      )}
-    </div>
-  )
-}
+        )}
+
+        {/* Service Selection Modal */}
+        <ServiceSelectionModal
+          open={showServiceModal}
+          onOpenChange={setShowServiceModal}
+        />
+      </div>
+    )
+  }
 
 function StatCard({ title, value, icon }: { title: string; value: number; icon: React.ReactNode }) {
   return (

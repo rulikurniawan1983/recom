@@ -1,12 +1,12 @@
-export type UserRole = 'admin' | 'user'
+export type UserRole = 'admin' | 'user' | 'doctor'
 
-export type RegistrationStatus = 
-  | 'draft' 
-  | 'submitted' 
-  | 'document_verification' 
-  | 'field_inspection' 
-  | 'assessment' 
-  | 'approved' 
+export type RegistrationStatus =
+  | 'draft'
+  | 'submitted'
+  | 'document_verification'
+  | 'field_inspection'
+  | 'assessment'
+  | 'approved'
   | 'rejected'
   | 'revision_requested'
 
@@ -38,6 +38,214 @@ export interface ProductType {
   category: string
   created_at: string
 }
+
+// ============================================
+// VETERINARY SERVICE TYPES
+// ============================================
+
+export interface Doctor {
+  id: string
+  user_id: string
+  license_number: string
+  specialization: string | null
+  years_of_experience: number | null
+  biography: string | null
+  profile_picture_url: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+  profiles?: {
+    full_name: string | null
+    email: string
+  }
+}
+
+export interface Pet {
+  id: string
+  user_id: string
+  name: string
+  species: string
+  breed: string | null
+  age_years: number
+  age_months: number
+  gender: 'jantan' | 'betina' | 'lainnya'
+  weight_kg: number | null
+  color: string | null
+  distinctive_features: string | null
+  health_history: string | null
+  vaccination_history: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface VaccinationSchedule {
+  id: string
+  doctor_id: string
+  date: string
+  start_time: string
+  end_time: string
+  max_patients: number
+  current_patients: number
+  location: string | null
+  notes: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+  doctors?: Doctor
+}
+
+export interface Vaccination {
+  id: string
+  pet_id: string
+  user_id: string
+  doctor_id: string | null
+  schedule_id: string | null
+  vaccination_date: string
+  batch_number: string | null
+  vaccine_type: string
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show'
+  qr_code: string | null
+  ticket_id: string | null
+  notes: string | null
+  admin_notes: string | null
+  created_at: string
+  updated_at: string
+  pets?: Pet
+  doctors?: Doctor
+  vaccination_schedules?: VaccinationSchedule
+}
+
+export interface TreatmentSchedule {
+  id: string
+  doctor_id: string
+  date: string
+  start_time: string
+  end_time: string
+  max_patients: number
+  current_patients: number
+  location: string | null
+  notes: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+  doctors?: Doctor
+}
+
+export interface Treatment {
+  id: string
+  pet_id: string
+  user_id: string
+  doctor_id: string
+  schedule_id: string | null
+  symptoms: string
+  medical_history: string | null
+  photos_urls: string[] | null
+  videos_urls: string[] | null
+  diagnosis: string | null
+  prescription: string | null
+  treatment_notes: string | null
+  follow_up_date: string | null
+  status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled'
+  payment_status: 'unpaid' | 'paid' | 'refunded'
+  created_at: string
+  updated_at: string
+  pets?: Pet
+  doctors?: Doctor
+  treatment_schedules?: TreatmentSchedule
+}
+
+export interface ConsultationSchedule {
+  id: string
+  doctor_id: string
+  date: string
+  start_time: string
+  end_time: string
+  max_patients: number
+  current_patients: number
+  consultation_type: 'online' | 'offline' | 'both'
+  meeting_link: string | null
+  location: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+  doctors?: Doctor
+}
+
+export interface Consultation {
+  id: string
+  pet_id: string
+  user_id: string
+  doctor_id: string
+  schedule_id: string | null
+  consultation_type: 'online' | 'offline'
+  scheduled_date: string
+  scheduled_time: string
+  meeting_link: string | null
+  location: string | null
+  documents_urls: string[] | null
+  symptoms: string | null
+  consultation_notes: string | null
+  diagnosis: string | null
+  prescription: string | null
+  status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled'
+  is_rated: boolean
+  rating: number | null
+  review: string | null
+  created_at: string
+  updated_at: string
+  pets?: Pet
+  doctors?: Doctor
+  consultation_schedules?: ConsultationSchedule
+}
+
+export interface MedicalRecord {
+  id: string
+  pet_id: string
+  record_type: 'vaccination' | 'treatment' | 'consultation' | 'checkup' | 'surgery'
+  reference_id: string | null
+  doctor_id: string | null
+  date: string
+  findings: string | null
+  diagnosis: string | null
+  prescription: string | null
+  recommendations: string | null
+  attachments: string[] | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+  pets?: Pet
+  doctors?: Doctor
+}
+
+export interface Notification {
+  id: string
+  user_id: string
+  type: 'booking_confirmed' | 'reminder' | 'status_update' | 'system'
+  title: string
+  message: string
+  data: Record<string, any> | null
+  is_read: boolean
+  created_at: string
+  read_at: string | null
+}
+
+export interface PetDocument {
+  id: string
+  pet_id: string
+  user_id: string
+  file_name: string
+  file_url: string
+  file_type: string | null
+  document_type: string | null
+  description: string | null
+  uploaded_at: string
+  created_at: string
+}
+
+// ============================================
+// EXISTING TYPES (NKV & Dokter Hewan)
+// ============================================
 
 export interface NKVRegistration {
   id: string

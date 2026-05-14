@@ -21,7 +21,11 @@ import {
   Menu,
   Search,
   Calendar,
-  ClipboardCheck
+  ClipboardCheck,
+  Syringe,
+  Stethoscope,
+  Video,
+  UserCog
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -116,7 +120,7 @@ export default function AdminPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<RegistrationStatus | 'all'>('all');
     const [typeFilter, setTypeFilter] = useState<'all' | 'NKV' | 'Dokter Hewan'>('all');
-    const [viewMode, setViewMode] = useState<'dashboard' | 'applications' | 'users' | 'verification'>('dashboard');
+    const [viewMode, setViewMode] = useState<'dashboard' | 'applications' | 'users' | 'verification' | 'vaccinations' | 'treatments' | 'consultations' | 'doctors'>('dashboard');
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [selectedReg, setSelectedReg] = useState<AdminRegistration | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -701,18 +705,74 @@ export default function AdminPage() {
                  <ClipboardCheck className="h-5 w-5" />
                  Verifikasi Dokter Hewan
                </button>
-              <button
-                onClick={() => setViewMode('users')}
-                className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  viewMode === 'users' 
-                    ? 'bg-blue-50 text-blue-700' 
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <Users className="h-5 w-5" />
-                Daftar Pengguna
-              </button>
-            </nav>
+               <button
+                 onClick={() => setViewMode('users')}
+                 className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                   viewMode === 'users'
+                     ? 'bg-blue-50 text-blue-700'
+                     : 'text-gray-700 hover:bg-gray-100'
+                 }`}
+               >
+                 <Users className="h-5 w-5" />
+                 Daftar Pengguna
+               </button>
+
+               {/* Separator */}
+               <div className="my-2 border-t border-gray-200" />
+
+               {/* Veterinary Service Management */}
+               <p className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                 Layanan Kesehatan Hewan
+               </p>
+
+                <button
+                  onClick={() => router.push('/admin/vaccinations')}
+                  className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    viewMode === 'vaccinations'
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <Syringe className="h-5 w-5" />
+                  Vaksinasi
+                </button>
+
+                <button
+                  onClick={() => router.push('/admin/treatments')}
+                  className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    viewMode === 'treatments'
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <Stethoscope className="h-5 w-5" />
+                  Pengobatan
+                </button>
+
+                <button
+                  onClick={() => router.push('/admin/consultations')}
+                  className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    viewMode === 'consultations'
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <Video className="h-5 w-5" />
+                  Konsultasi
+                </button>
+
+                <button
+                  onClick={() => router.push('/admin/doctors')}
+                  className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    viewMode === 'doctors'
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <UserCog className="h-5 w-5" />
+                  Dokter
+                </button>
+             </nav>
 
           {/* User Section */}
           <div className="px-4 py-4 border-t border-gray-200">

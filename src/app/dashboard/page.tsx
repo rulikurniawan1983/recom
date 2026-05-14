@@ -23,7 +23,7 @@ export default async function DashboardPage() {
 
   // Redirect admin users to admin dashboard
   if (profile?.role === 'admin') {
-    redirect('/admin/dashboard')
+    redirect('/admin')
   }
 
   const { data: nkvRegistrations } = await supabase
@@ -40,11 +40,11 @@ export default async function DashboardPage() {
 
   return (
     <TrackingModalProvider>
-      <DashboardClient 
-        user={user} 
-        profile={profile as Profile | null} 
-        nkvRegistrations={(nkvRegistrations ?? []) as NKVRegistration[]} 
-        dokterRegistrations={(dokterRegistrations ?? []) as DokterHewanRegistration[]} 
+      <DashboardClient
+        user={user}
+        profile={profile as Profile | null}
+        nkvRegistrations={(nkvRegistrations ?? []) as NKVRegistration[]}
+        dokterRegistrations={(dokterRegistrations ?? []) as DokterHewanRegistration[]}
       />
     </TrackingModalProvider>
   )

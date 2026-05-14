@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { LayoutDashboard, FileText, ClipboardCheck, Users, Shield, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, FileText, ClipboardCheck, Users, Shield, LogOut, Menu, X, Syringe, Stethoscope, Video, UserCog } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface AdminShellProps {
@@ -19,7 +19,11 @@ export default function AdminShell({ children, userEmail }: AdminShellProps) {
   const getActiveView = () => {
     if (pathname.startsWith('/admin/users')) return 'users';
     if (pathname.startsWith('/admin/verification')) return 'verification';
-    if (pathname.startsWith('/admin')) return 'dashboard'; // default for /admin and any other admin page
+    if (pathname.startsWith('/admin/vaccinations')) return 'vaccinations';
+    if (pathname.startsWith('/admin/treatments')) return 'treatments';
+    if (pathname.startsWith('/admin/consultations')) return 'consultations';
+    if (pathname.startsWith('/admin/doctors')) return 'doctors';
+    if (pathname === '/admin') return 'dashboard';
     return 'dashboard';
   };
 
@@ -85,18 +89,74 @@ export default function AdminShell({ children, userEmail }: AdminShellProps) {
               <ClipboardCheck className="h-5 w-5" />
               Verifikasi Dokter Hewan
             </button>
-            <button
-              onClick={() => handleNavigate('/admin/users')}
-              className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                activeView === 'users'
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              <Users className="h-5 w-5" />
-              Daftar Pengguna
-            </button>
-          </nav>
+             <button
+               onClick={() => handleNavigate('/admin/users')}
+               className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                 activeView === 'users'
+                   ? 'bg-blue-50 text-blue-700'
+                   : 'text-gray-700 hover:bg-gray-100'
+               }`}
+             >
+               <Users className="h-5 w-5" />
+               Daftar Pengguna
+             </button>
+
+             {/* Separator */}
+             <div className="my-2 border-t border-gray-200" />
+
+             {/* Veterinary Service Management */}
+             <p className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+               Layanan Kesehatan Hewan
+             </p>
+
+             <button
+               onClick={() => handleNavigate('/admin/vaccinations')}
+               className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                 activeView === 'vaccinations'
+                   ? 'bg-blue-50 text-blue-700'
+                   : 'text-gray-700 hover:bg-gray-100'
+               }`}
+             >
+               <Syringe className="h-5 w-5" />
+               Vaksinasi
+             </button>
+
+             <button
+               onClick={() => handleNavigate('/admin/treatments')}
+               className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                 activeView === 'treatments'
+                   ? 'bg-blue-50 text-blue-700'
+                   : 'text-gray-700 hover:bg-gray-100'
+               }`}
+             >
+               <Stethoscope className="h-5 w-5" />
+               Pengobatan
+             </button>
+
+             <button
+               onClick={() => handleNavigate('/admin/consultations')}
+               className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                 activeView === 'consultations'
+                   ? 'bg-blue-50 text-blue-700'
+                   : 'text-gray-700 hover:bg-gray-100'
+               }`}
+             >
+               <Video className="h-5 w-5" />
+               Konsultasi
+             </button>
+
+             <button
+               onClick={() => handleNavigate('/admin/doctors')}
+               className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                 activeView === 'doctors'
+                   ? 'bg-blue-50 text-blue-700'
+                   : 'text-gray-700 hover:bg-gray-100'
+               }`}
+             >
+               <UserCog className="h-5 w-5" />
+               Dokter
+             </button>
+           </nav>
 
           {/* User Section */}
           <div className="px-4 py-4 border-t border-gray-200">
