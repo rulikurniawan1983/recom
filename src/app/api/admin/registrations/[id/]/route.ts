@@ -6,7 +6,8 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
-    const id = request.nextUrl.pathname.split('/').pop()
+    const segments = request.nextUrl.pathname.split('/').filter(Boolean)
+    const id = segments[segments.length - 1]
 
     if (!id) {
       return NextResponse.json({ error: 'ID tidak ditemukan' }, { status: 400 })

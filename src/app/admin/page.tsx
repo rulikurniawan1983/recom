@@ -404,16 +404,28 @@ const openDetailModal = async (reg: AdminRegistration) => {
          setDetailLoading(true);
          try {
            const res = await fetch(`/api/admin/registrations/${reg.id}`);
-           if (!res.ok) {
-             const errData = await res.json();
-             throw new Error(errData.error || 'Gagal memuat detail');
+           const text = await res.text();
+           console.log('API response status:', res.status, 'body:', text ? text.substring(0, 200) : '(empty)');
+
+           if (!res.ok || !text) {
+             let errMsg = 'Gagal memuat detail';
+             try {
+               const errData = JSON.parse(text);
+               errMsg = errData.error || errMsg;
+             } catch {}
+             throw new Error(errMsg);
            }
-           const data = await res.json();
+
+           const data = JSON.parse(text);
+
+           if (!data.type) {
+             throw new Error('Data tidak valid');
+           }
 
            let fullReg: Registration | null = null;
            if (data.type === 'NKV') {
              fullReg = { ...data, type: 'NKV' as const };
-           } else {
+           } else if (data.type === 'Dokter Hewan') {
              fullReg = { ...data, type: 'Dokter Hewan' as const };
            }
 
