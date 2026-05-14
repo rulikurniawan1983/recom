@@ -643,7 +643,7 @@ export default function RegistrationDetailModal({
             {/* Documents Section */}
             <div>
               <h3 className="font-medium text-blue-300 mb-2">Lihat Rekomendasi dan Dokumen yang Diunggah:</h3>
-              <p className="text-sm text-gray-400">
+              <div className="text-sm text-gray-400">
                 {registration.type === 'NKV'
                   ? (registration.recommendation_file_url
                     ? <a href={registration.recommendation_file_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline hover:text-blue-300">
@@ -687,7 +687,7 @@ export default function RegistrationDetailModal({
                       </div>
                     : 'Belum ada dokumen yang diunggah'
                   )}
-              </p>
+              </div>
             </div>
           </div>
         </div>

@@ -17,8 +17,6 @@ import {
   Shield,
   File,
   Users,
-  X,
-  Menu,
   Search,
   Calendar,
   ClipboardCheck
@@ -113,12 +111,11 @@ export default function AdminPage() {
   const [users, setUsers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-   const [searchQuery, setSearchQuery] = useState('');
-   const [statusFilter, setStatusFilter] = useState<RegistrationStatus | 'all'>('all');
-   const [typeFilter, setTypeFilter] = useState<'all' | 'NKV' | 'Dokter Hewan'>('all');
-   const [viewMode, setViewMode] = useState<'dashboard' | 'applications' | 'users' | 'verification'>('dashboard');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [selectedReg, setSelectedReg] = useState<AdminRegistration | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState<RegistrationStatus | 'all'>('all');
+    const [typeFilter, setTypeFilter] = useState<'all' | 'NKV' | 'Dokter Hewan'>('all');
+    const [viewMode, setViewMode] = useState<'dashboard' | 'applications' | 'users' | 'verification'>('dashboard');
+   const [selectedReg, setSelectedReg] = useState<AdminRegistration | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
    const [documentsTab, setDocumentsTab] = useState('documents');
@@ -237,19 +234,20 @@ export default function AdminPage() {
     await new Promise(resolve => setTimeout(resolve, 0));
     setLoading(true);
     setError(null);
-    try {
-      const [regRes, userRes, usersRes] = await Promise.all([
-        fetch('/api/admin/applications'),
-        fetch('/api/admin/whoami'),
-        fetch('/api/admin/users')
-      ]);
+     try {
+       const [regRes, userRes, usersRes] = await Promise.all([
+         fetch('/api/admin/applications'),
+         fetch('/api/admin/whoami'),
+         fetch('/api/admin/users')
+       ]);
 
-      if (regRes.ok) {
-        const data = await regRes.json();
-        setRegistrations(Array.isArray(data) ? data : []);
-      } else {
-        setError('Gagal memuat data permohonan');
-      }
+       if (regRes.ok) {
+         const data = await regRes.json();
+         console.log('Fetched registrations from API:', data);
+         setRegistrations(Array.isArray(data) ? data : []);
+       } else {
+         setError('Gagal memuat data permohonan');
+       }
 
       if (userRes.ok) {
         const data = await userRes.json();
@@ -400,8 +398,13 @@ export default function AdminPage() {
        setAssessOpen(true);
      };
 
-const openDetailModal = async (reg: AdminRegistration) => {
-         setDetailLoading(true);
+  const openDetailModal = async (reg: AdminRegistration) => {
+    console.log('Opening detail modal for registration:', reg.id, reg.registration_number, reg.type)
+    if (!reg.id) {
+      alert('ID registrasi tidak valid')
+      return
+    }
+    setDetailLoading(true);
          try {
            const res = await fetch(`/api/admin/registrations/${reg.id}`);
            const text = await res.text();
@@ -641,8 +644,8 @@ const openDetailModal = async (reg: AdminRegistration) => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      {/* Sidebar - always visible */}
+      <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200">
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
@@ -652,12 +655,6 @@ const openDetailModal = async (reg: AdminRegistration) => {
               </div>
               <span className="font-bold text-gray-900">Admin Panel</span>
             </div>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="lg:hidden text-gray-500 hover:text-gray-700"
-            >
-              <X className="h-5 w-5" />
-            </button>
           </div>
 
             {/* Navigation */}
@@ -732,30 +729,11 @@ const openDetailModal = async (reg: AdminRegistration) => {
             </Button>
           </div>
         </div>
-      </aside>
+       </aside>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
-        {/* Mobile Header */}
-        <header className="bg-white border-b border-gray-200 lg:hidden">
-          <div className="flex items-center justify-between h-16 px-4">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <Menu className="h-6 w-6" />
-            </button>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <Shield className="h-5 w-5 text-white" />
-              </div>
-              <span className="font-bold text-gray-900">Admin</span>
-            </div>
-            <div className="w-6" />
-          </div>
-        </header>
-
-        {/* Page Content */}
+       {/* Main Content */}
+       <div className="flex-1 flex flex-col min-w-0 pl-64">
+         {/* Page Content */}
         <main className="flex-1 p-4 lg:p-8 overflow-auto">
           {/* Dashboard View */}
           {viewMode === 'dashboard' && (
@@ -814,61 +792,26 @@ const openDetailModal = async (reg: AdminRegistration) => {
                     <p className="text-xs text-gray-500 mt-1">Selesai</p>
                   </CardContent>
                 </Card>
-              </div>
-
-              {/* Detailed Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
-                {Object.entries(STATUS_LABELS).map(([key, label]) => {
-                  const count = registrations.filter(r => r.status === key).length;
-                  return (
-                    <Card key={key} className="hover:shadow-md transition-shadow">
-                      <CardContent className="pt-4">
-                        <div className="text-2xl font-bold text-gray-900">{count}</div>
-                        <p className="text-xs text-gray-600 truncate">{label}</p>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
                </div>
 
-               {/* Analysis Section - No table, just analytics */}
-               <Card className="bg-blue-50 border-blue-200">
-                 <CardHeader>
-                   <CardTitle className="text-blue-900">Analisis Permohonan</CardTitle>
-                   <CardDescription>
-                     Ringkasan statistik dan tren permohonan
-                   </CardDescription>
-                 </CardHeader>
-                 <CardContent>
-                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                     <div className="p-4 bg-white rounded-lg border border-blue-100">
-                       <h4 className="font-medium text-gray-900 mb-2">Tingkat Persetujuan</h4>
-                       <div className="text-2xl font-bold text-green-600">
-                         {stats.total > 0 ? Math.round((stats.approved / stats.total) * 100) : 0}%
-                       </div>
-                       <p className="text-xs text-gray-500 mt-1">
-                         {stats.approved} disetujui dari {stats.total} total
-                       </p>
-                     </div>
-                     <div className="p-4 bg-white rounded-lg border border-yellow-100">
-                       <h4 className="font-medium text-gray-900 mb-2">Perlu Tindakan</h4>
-                       <div className="text-2xl font-bold text-yellow-600">{stats.needsAction}</div>
-                       <p className="text-xs text-gray-500 mt-1">
-                         Permohonan yang memerlukan perhatian admin
-                       </p>
-                     </div>
-                     <div className="p-4 bg-white rounded-lg border border-purple-100">
-                       <h4 className="font-medium text-gray-900 mb-2">Rata-rata Waktu Proses</h4>
-                       <div className="text-2xl font-bold text-purple-600">3-5 hari</div>
-                       <p className="text-xs text-gray-500 mt-1">
-                         Estimasi waktu verifikasi hingga disetujui
-                       </p>
-                     </div>
-                   </div>
-                 </CardContent>
-                </Card>
-              </>
-            )}
+               {/* Detailed Stats */}
+               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
+                 {Object.entries(STATUS_LABELS).map(([key, label]) => {
+                   const count = registrations.filter(r => r.status === key).length;
+                   return (
+                     <Card key={key} className="hover:shadow-md transition-shadow">
+                       <CardContent className="pt-4">
+                         <div className="text-2xl font-bold text-gray-900">{count}</div>
+                         <p className="text-xs text-gray-600 truncate">{label}</p>
+                       </CardContent>
+                     </Card>
+                   );
+                 })}
+               </div>
+
+               {/* Dashboard View ends */}
+               </>
+             )}
 
             {/* Applications View */}
             {viewMode === 'applications' && (

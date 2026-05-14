@@ -1,17 +1,8 @@
 import { createClient } from '@/lib/supabase-server'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY
-
-if (!serviceKey) {
-  throw new Error('SUPABASE_SERVICE_ROLE_KEY is required')
-}
 
 export async function GET() {
   try {
-    // Get the current user from session cookies
     const supabase = await createClient()
 
     const {
@@ -25,7 +16,6 @@ export async function GET() {
       )
     }
 
-    // Check if user is admin
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('role')
@@ -39,13 +29,8 @@ export async function GET() {
       )
     }
 
-    // Fetch all registrations using service role client (bypasses RLS)
-    const serviceSupabase = createServiceClient(supabaseUrl, serviceKey!, {
-      auth: { autoRefreshToken: false, persistSession: false }
-    })
-
     const [nkvResult, dokterResult] = await Promise.all([
-      serviceSupabase
+      supabase
         .from('nkv_registrations')
         .select(`
           id,
@@ -57,7 +42,7 @@ export async function GET() {
           business_phone
         `)
         .order('created_at', { ascending: false }),
-      serviceSupabase
+      supabase
         .from('dokter_hewan_registrations')
         .select(`
           id,
@@ -74,14 +59,6 @@ export async function GET() {
     const nkvRegs = nkvResult.data || []
     const dokterRegs = dokterResult.data || []
 
-    if (nkvResult.error) {
-      console.error('NKV fetch error:', nkvResult.error)
-    }
-    if (dokterResult.error) {
-      console.error('Dokter fetch error:', dokterResult.error)
-    }
-
-    // Transform to unified format
     const combined = [
       ...nkvRegs.map(reg => ({
         id: reg.id,
@@ -105,10 +82,7 @@ export async function GET() {
       }))
     ]
 
-    // Sort by created_at descending
     combined.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-
-    console.log(`Admin API: User ${user.email} fetched ${combined.length} records`)
 
     return NextResponse.json(combined)
   } catch (error) {

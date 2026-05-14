@@ -9,6 +9,114 @@ if (!serviceKey) {
   throw new Error('SUPABASE_SERVICE_ROLE_KEY is required')
 }
 
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    console.log('[GET /api/admin/registrations/[id]] Fetching registration with id:', id)
+
+    // Verify admin auth and get supabase client with session
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      console.log('No user found - unauthorized')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile || profile.role !== 'admin') {
+      console.log('User does not have admin role')
+      return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 })
+    }
+
+    console.log('Admin verified, proceeding with query')
+
+    // Use the same supabase client (with user session) to fetch registration
+    // Admin RLS policy allows viewing all registrations
+    let { data: nkvReg, error: nkvError } = await supabase
+      .from('nkv_registrations')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (nkvError) {
+      console.error('NKV query error:', nkvError)
+      // If error is not "No rows found", return error
+      if (nkvError.code !== 'PGRST116') {
+        return NextResponse.json(
+          { error: 'Failed to query NKV registrations', details: nkvError.message },
+          { status: 500 }
+        )
+      }
+    }
+
+    if (nkvReg) {
+      console.log('Found in NKV table')
+      // Fetch documents with type filter
+      const { data: docs } = await supabase
+        .from('registration_documents')
+        .select('*')
+        .eq('registration_id', id)
+        .eq('registration_type', 'nkv')
+      return NextResponse.json({
+        ...nkvReg,
+        regType: 'NKV',
+        documents: docs || []
+      })
+    }
+
+    // Try Dokter Hewan
+    let { data: dokterReg, error: dokterError } = await supabase
+      .from('dokter_hewan_registrations')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (dokterError) {
+      console.error('Dokter query error:', dokterError)
+      if (dokterError.code !== 'PGRST116') {
+        return NextResponse.json(
+          { error: 'Failed to query Dokter Hewan registrations', details: dokterError.message },
+          { status: 500 }
+        )
+      }
+    }
+
+    if (dokterReg) {
+      console.log('Found in Dokter Hewan table')
+      const { data: docs } = await supabase
+        .from('registration_documents')
+        .select('*')
+        .eq('registration_id', id)
+        .eq('registration_type', 'dokter_hewan')
+      return NextResponse.json({
+        ...dokterReg,
+        regType: 'Dokter Hewan',
+        documents: docs || []
+      })
+    }
+
+    console.log(`Registration not found for id: ${id}`)
+    return NextResponse.json({ error: 'Registration not found' }, { status: 404 })
+  } catch (error) {
+    console.error('Get registration error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error', details: error instanceof Error ? error.message : String(error) },
+      { status: 500 }
+    )
+  }
+}
+
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
