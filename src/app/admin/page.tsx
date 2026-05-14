@@ -51,13 +51,9 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import RegistrationDetailModal from '@/components/registration-detail-modal';
-import { createClient as createServiceClient } from '@supabase/supabase-js';
 import AdminVerificationSubPage from './verification/dokter-hewan/page-client';
 import AdminDokterVerificationClient from './verification/dokter-hewan/dokter-verification-client';
 import type { RegistrationStatus, Profile, NKVRegistration, DokterHewanRegistration } from '@/lib/types';
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 type Registration = (NKVRegistration & { type: 'NKV' }) | (DokterHewanRegistration & { type: 'Dokter Hewan' });
 
@@ -404,69 +400,36 @@ export default function AdminPage() {
        setAssessOpen(true);
      };
 
-      const openDetailModal = async (reg: AdminRegistration) => {
-        setDetailLoading(true);
-        try {
-          // Check if service role key is available
-          if (!SUPABASE_SERVICE_ROLE_KEY) {
-            throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured. Please contact administrator.');
-          }
-          // Use service role client to bypass RLS (admin viewing any registration)
-          const serviceSupabase = createServiceClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-            auth: { autoRefreshToken: false, persistSession: false }
-          });
-
-         let fullReg: Registration | null = null;
-         if (reg.type === 'NKV') {
-           const { data, error } = await serviceSupabase
-             .from('nkv_registrations')
-             .select(`
-               *,
-               profiles!inner(full_name, email),
-               business_units(name, address, phone, email, business_type),
-               product_types(name, description, category),
-               registration_documents(
-                 id, document_type, file_url, file_name, status, uploaded_at, admin_notes
-               ),
-               tracking_logs(id, status, created_at, notes, created_by)
-             `)
-             .eq('id', reg.id)
-             .single();
-           if (error) throw error;
-           if (data) {
-             fullReg = { ...data, type: 'NKV' as const };
+const openDetailModal = async (reg: AdminRegistration) => {
+         setDetailLoading(true);
+         try {
+           const res = await fetch(`/api/admin/registrations/${reg.id}`);
+           if (!res.ok) {
+             const errData = await res.json();
+             throw new Error(errData.error || 'Gagal memuat detail');
            }
-         } else {
-           const { data, error } = await serviceSupabase
-             .from('dokter_hewan_registrations')
-             .select(`
-               *,
-               profiles!inner(full_name, email),
-               registration_documents(
-                 id, document_type, file_url, file_name, status, uploaded_at, admin_notes
-               ),
-               tracking_logs(id, status, created_at, notes, created_by)
-             `)
-             .eq('id', reg.id)
-             .single();
-           if (error) throw error;
-           if (data) {
+           const data = await res.json();
+
+           let fullReg: Registration | null = null;
+           if (data.type === 'NKV') {
+             fullReg = { ...data, type: 'NKV' as const };
+           } else {
              fullReg = { ...data, type: 'Dokter Hewan' as const };
            }
+
+           if (fullReg) {
+             setDetailReg(fullReg);
+             setShowDetailModal(true);
+           } else {
+             alert('Data permohonan tidak ditemukan');
+           }
+         } catch (err) {
+           console.error('Failed to fetch registration detail:', err);
+           alert('Gagal memuat detail permohonan: ' + (err instanceof Error ? err.message : 'Unknown error'));
+         } finally {
+           setDetailLoading(false);
          }
-         if (fullReg) {
-           setDetailReg(fullReg);
-           setShowDetailModal(true);
-         } else {
-           alert('Data permohonan tidak ditemukan');
-         }
-       } catch (err) {
-         console.error('Failed to fetch registration detail:', err);
-         alert('Gagal memuat detail permohonan: ' + (err instanceof Error ? err.message : 'Unknown error'));
-       } finally {
-         setDetailLoading(false);
-       }
-     };
+       };
 
      const openDocPreview = (doc: Document) => {
       setPreviewDoc(doc);
