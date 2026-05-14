@@ -96,41 +96,38 @@ export async function GET(request: NextRequest) {
       if (nkvData) {
         fullReg = { ...nkvData, type: 'NKV' }
       }
-    } else {
-      // Check Dokter Hewan registrations
-      const { data: dhData, error: dhError } = await serviceSupabase
-        .from('dokter_hewan_registrations')
-        .select(`
-          id,
-          user_id,
-          registration_number,
-          full_name,
-          birth_place_date,
-          ktp_address,
-          clinic_address,
-          phone,
-          email,
-          color_photo_url,
-          diploma_url,
-          competency_cert_url,
-          professional_recommendation_url,
-          nib_number,
-          strv_number,
-          status,
-          verification_notes,
-          inspector_id,
-          inspection_date,
-          inspection_notes,
-          assessment_score,
-          assessment_notes,
-          recommendation_file_url,
-          created_at,
-          updated_at,
-          approved_at,
-          profiles(full_name, email),
-          registration_documents(id, document_type, file_url, file_name, status, uploaded_at, admin_notes),
-          tracking_logs(id, status, created_at, notes, created_by)
-        `)
+} else {
+       // Check Dokter Hewan registrations
+       const { data: dhData, error: dhError } = await serviceSupabase
+         .from('dokter_hewan_registrations')
+         .select(`
+           id,
+           user_id,
+           registration_number,
+           full_name,
+           birth_place_date,
+           ktp_address,
+           clinic_address,
+           phone,
+           email,
+           color_photo_url,
+           diploma_url,
+           competency_cert_url,
+           professional_recommendation_url,
+           nib_number,
+           strv_number,
+           status,
+           verification_notes,
+           inspection_notes,
+           assessment_notes,
+           recommendation_file_url,
+           created_at,
+           updated_at,
+           approved_at,
+           profiles(full_name, email),
+           registration_documents(id, document_type, file_url, file_name, status, uploaded_at, admin_notes),
+           tracking_logs(id, status, created_at, notes, created_by)
+         `)
         .eq('id', id)
         .single()
 
