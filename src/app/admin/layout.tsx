@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
 
 export const metadata: Metadata = {
-  title: 'Admin Dashboard - SLIDER',
+  title: 'Admin Dashboard - SLIDER -VETSYS',
   description: 'Admin panel for managing registrations'
 }
 

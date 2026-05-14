@@ -61,10 +61,16 @@ export async function DELETE(
       return NextResponse.json({ error: 'Registration not found' }, { status: 404 })
     }
 
+    // Manually delete registration_documents (polymorphic, no FK cascade)
+    await serviceSupabase
+      .from('registration_documents')
+      .delete()
+      .eq('registration_id', id)
+
     // Delete registration - ON DELETE CASCADE will automatically remove:
-    // - registration_documents (for NKV)
     // - tracking_logs (via dual FK cascade)
     // - inspection_schedules (via dual FK cascade)
+    // - registration_comments (via dual FK cascade)
     const tableName = isNKV ? 'nkv_registrations' : 'dokter_hewan_registrations'
 
     const { error: deleteError } = await serviceSupabase

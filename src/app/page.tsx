@@ -19,10 +19,9 @@ function HomePageContent() {
               <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg">
                 <Shield className="h-6 w-6 text-white" />
               </div>
-              <div className="flex flex-col">
-                <span className="text-xl font-bold text-gray-900 leading-tight">SLIDER</span>
-                <span className="text-xs text-gray-500 -mt-1">Dinas Peternakan</span>
-              </div>
+               <div className="flex flex-col">
+                 <span className="text-xl font-bold text-gray-900 leading-tight">SLIDER -VETSYS</span>
+               </div>
             </div>
 
             {/* Auth Buttons */}
@@ -51,10 +50,10 @@ function HomePageContent() {
             {/* Hero Header */}
             <div className="text-center mb-10">
               {/* Badge */}
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-medium mb-4">
-                <Shield className="h-3 w-3" />
-                Sistem Resmi Dinas Peternakan & Perikanan Kabupaten Bogor
-              </div>
+                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-medium mb-4">
+                   <Shield className="h-3 w-3" />
+                   Sistem VETSYS - Verifikasi Veteriner Digital
+                 </div>
 
               {/* Heading */}
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 leading-tight">
@@ -94,23 +93,7 @@ function HomePageContent() {
               </div>
             </div>
 
-            {/* Stats Bar */}
-            <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto mb-8">
-              <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 text-center">
-                <div className="text-xl md:text-2xl font-bold text-blue-600">1000+</div>
-                <div className="text-xs text-gray-500">Permohonan Diproses</div>
-              </div>
-              <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 text-center">
-                <div className="text-xl md:text-2xl font-bold text-green-600">95%</div>
-                <div className="text-xs text-gray-500">Tingkat Persetujuan</div>
-              </div>
-              <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 text-center">
-                <div className="text-xl md:text-2xl font-bold text-purple-600">&lt;3 hari</div>
-                <div className="text-xs text-gray-500">Waktu Respons</div>
-              </div>
-            </div>
-
-            {/* Quick Features Grid */}
+               {/* Quick Features Grid */}
             <div className="grid md:grid-cols-3 gap-4 max-w-3xl mx-auto">
               <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
                 <CheckCircle className="h-6 w-6 text-green-600 mb-2" />
@@ -141,14 +124,14 @@ function HomePageContent() {
               <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center">
                 <Shield className="h-4 w-4 text-white" />
               </div>
-              <span className="text-sm font-medium text-white">SLIDER - Dinas Peternakan & Perikanan</span>
+               <span className="text-sm font-medium text-white">SLIDER -VETSYS</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-gray-400">
               <Link href="#kontak" className="hover:text-white transition-colors">Kontak</Link>
               <Link href="#cara-pakai" className="hover:text-white transition-colors">Panduan</Link>
               <Link href="/tracking" className="hover:text-white transition-colors">Lacak</Link>
             </div>
-            <p className="text-xs text-gray-500">© 2026 Din Peternakan & Perikanan Bogor</p>
+             <p className="text-xs text-gray-500">© 2026 VETSYS - SLIDER</p>
           </div>
         </div>
       </footer>

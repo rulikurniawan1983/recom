@@ -84,11 +84,14 @@ export async function POST(
       return NextResponse.json({ error: updateError.message }, { status: 500 })
     }
 
-    // If NKV and approved, mark all documents as verified
+    // If NKV and approved, mark all documents as approved and set verified_at
     if (tableName === 'nkv_registrations' && action === 'approve') {
       const { error: docUpdateError } = await serviceSupabase
         .from('registration_documents')
-        .update({ verified: true })
+        .update({ 
+          status: 'approved',
+          verified_at: new Date().toISOString() 
+        })
         .eq('registration_id', id)
 
       if (docUpdateError) {
