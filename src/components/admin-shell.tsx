@@ -63,17 +63,17 @@ export default function AdminShell({ children, userEmail }: AdminShellProps) {
               <LayoutDashboard className="h-5 w-5" />
               Dashboard
             </button>
-            <button
-              onClick={() => handleNavigate('/admin')}
-              className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                activeView === 'applications'
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              <FileText className="h-5 w-5" />
-              Semua Permohonan
-            </button>
+              <button
+                onClick={() => handleNavigate('/admin')}
+                className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  activeView === 'dashboard'
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <FileText className="h-5 w-5" />
+                Semua Permohonan
+              </button>
             <button
               onClick={() => handleNavigate('/admin/verification')}
               className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${

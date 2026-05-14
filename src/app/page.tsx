@@ -57,15 +57,10 @@ function HomePageContent() {
 
               {/* Heading */}
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 leading-tight">
-                REKOMENDASI{' '}
-                <span className="text-blue-600">ONLINE</span>
+                REKOMENDASI
               </h1>
 
               {/* Subheading */}
-              <p className="text-base md:text-lg text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
-                Layanan rekomendasi Nomor Kontrol Veteriner (NKV) dan Praktek Dokter Hewan 
-                secara digital. Cepat, mudah, dan transparan.
-              </p>
 
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-8">

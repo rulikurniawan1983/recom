@@ -554,6 +554,32 @@ Pastikan icon sudah ada di package: https://lucide.dev/icons
 
 ---
 
+## Changes Made
+
+### Verifikasi Dokter Hewan Empty State Fix
+- Updated `src/app/admin/verification/dokter-hewan/dokter-verification-client.tsx`:
+  - Changed empty state to display "Tidak ada pendaftaran dokter hewan yang menunggu verifikasi"
+  - Added white background and border to registration cards
+  - Ensured all text in modal is black with white background
+
+### Type Error Fix
+- Fixed `src/components/admin-shell.tsx:69` type error where `activeView === 'applications'` was compared but never returned by `getActiveView()`
+
+---
+
+## Changes Made
+
+### Verifikasi Dokter Hewan Empty State Fix
+- Updated `src/app/admin/verification/dokter-hewan/dokter-verification-client.tsx`:
+  - Changed empty state to display "Tidak ada pendaftaran dokter hewan yang menunggu verifikasi"
+  - Added white background and border to registration cards
+  - Ensured all text in modal is black with white background
+
+### Type Error Fix
+- Fixed `src/components/admin-shell.tsx:69` type error where `activeView === 'applications'` was compared but never returned by `getActiveView()`
+
+---
+
 ## Troubleshooting
 
 ### Error: "creatingUser is not defined"

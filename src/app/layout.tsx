@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SLIDER - REKOMENDASI ONLINE",
+  title: "SLIDER",
   description: "Sistem layanan informasi untuk rekomendasi Nomor Kontrol Veteriner dan Dokter Hewan",
 };
 
