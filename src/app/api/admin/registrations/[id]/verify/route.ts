@@ -51,16 +51,25 @@ export async function POST(
       auth: { autoRefreshToken: false, persistSession: false }
     })
 
-    const newStatus = action === 'approve' ? 'document_verification' : 'revision_requested'
-
-    // Check registration type
+    // Determine registration type
     const { data: nkvReg } = await serviceSupabase
       .from('nkv_registrations')
       .select('id')
       .eq('id', id)
       .single()
 
-    const tableName = nkvReg ? 'nkv_registrations' : 'dokter_hewan_registrations'
+    const isNKV = !!nkvReg
+    const tableName = isNKV ? 'nkv_registrations' : 'dokter_hewan_registrations'
+
+    let newStatus: string = ''
+
+    if (action === 'approve') {
+      newStatus = 'document_verification'
+    } else if (action === 'reject') {
+      newStatus = 'rejected'
+    } else if (action === 'request_revision') {
+      newStatus = 'revision_requested'
+    }
 
     const { error: updateError } = await serviceSupabase
       .from(tableName)

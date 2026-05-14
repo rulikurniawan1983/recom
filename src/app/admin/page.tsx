@@ -52,6 +52,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import RegistrationDetailModal from '@/components/registration-detail-modal';
 import { createClient as createServiceClient } from '@supabase/supabase-js';
+import AdminVerificationSubPage from './verification/dokter-hewan/page-client';
+import AdminDokterVerificationClient from './verification/dokter-hewan/dokter-verification-client';
 import type { RegistrationStatus, Profile, NKVRegistration, DokterHewanRegistration } from '@/lib/types';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -68,6 +70,7 @@ type AdminRegistration = {
   applicant_name: string;
   email: string;
   phone: string;
+  tracking_logs?: Array<{ id: string; status: string; created_at: string; notes?: string }>;
 };
 
 interface Document {
@@ -117,7 +120,7 @@ export default function AdminPage() {
    const [searchQuery, setSearchQuery] = useState('');
    const [statusFilter, setStatusFilter] = useState<RegistrationStatus | 'all'>('all');
    const [typeFilter, setTypeFilter] = useState<'all' | 'NKV' | 'Dokter Hewan'>('all');
-   const [viewMode, setViewMode] = useState<'dashboard' | 'applications' | 'users'>('dashboard');
+   const [viewMode, setViewMode] = useState<'dashboard' | 'applications' | 'users' | 'verification'>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedReg, setSelectedReg] = useState<AdminRegistration | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -695,17 +698,28 @@ export default function AdminPage() {
                 <LayoutDashboard className="h-5 w-5" />
                 Dashboard
               </button>
-              <button
-                onClick={() => setViewMode('applications')}
-                className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  viewMode === 'applications' 
-                    ? 'bg-blue-50 text-blue-700' 
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <FileText className="h-5 w-5" />
-                Semua Permohonan
-              </button>
+<button
+                 onClick={() => setViewMode('applications')}
+                 className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                   viewMode === 'applications'
+                     ? 'bg-blue-50 text-blue-700'
+                     : 'text-gray-700 hover:bg-gray-100'
+                 }`}
+               >
+                 <FileText className="h-5 w-5" />
+                 Semua Permohonan
+               </button>
+               <button
+                 onClick={() => setViewMode('verification')}
+                 className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                   viewMode === 'verification'
+                     ? 'bg-blue-50 text-blue-700'
+                     : 'text-gray-700 hover:bg-gray-100'
+                 }`}
+               >
+                 <ClipboardCheck className="h-5 w-5" />
+                 Verifikasi Dokter Hewan
+               </button>
               <button
                 onClick={() => setViewMode('users')}
                 className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
@@ -1278,9 +1292,16 @@ export default function AdminPage() {
             </>
           )}
 
-          {/* Close main content area */}
-          </main>
-        </div> {/* Close inner wrapper */}
+{/* Close main content area */}
+           </main>
+         </div> {/* Close inner wrapper */}
+
+{/* Verification View - Dokter Hewan */}
+         {viewMode === 'verification' && (
+           <main className="flex-1 p-4 lg:p-8 overflow-auto lg:pl-64">
+             <AdminVerificationSubPage />
+           </main>
+         )}
 
         {/* Documents Modal - Redesigned */}
         <Dialog open={showDocumentsModal} onOpenChange={(open) => {
@@ -1562,15 +1583,40 @@ export default function AdminPage() {
                    </div>
                  )}
 
-                 {/* TAB: RIWAYAT */}
-                 {documentsTab === 'history' && (
-                   <div className="p-6">
-                     <div className="text-center py-12">
-                       <Clock className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-                       <p className="text-gray-500">Riwayat status dan aktivitas akan segera tersedia.</p>
-                     </div>
-                   </div>
-                 )}
+{/* TAB: RIWAYAT */}
+                  {documentsTab === 'history' && (
+                    <div className="p-6">
+                      <h4 className="text-sm font-semibold text-gray-700 mb-3">Riwayat Aktivitas</h4>
+                      <div className="space-y-3">
+                        {selectedReg?.tracking_logs && selectedReg.tracking_logs.length > 0 ? (
+                          selectedReg.tracking_logs.map((log, idx) => (
+                            <div key={idx} className="flex items-start gap-3 text-sm">
+                              <div className={`w-2 h-2 rounded-full mt-2 ${
+                                log.status === 'approved' ? 'bg-green-500' :
+                                log.status === 'rejected' ? 'bg-red-500' :
+                                log.status === 'revision_requested' ? 'bg-orange-500' :
+                                'bg-blue-500'
+                              }`} />
+                              <div>
+                                <p className="text-gray-700">
+                                  <span className="font-medium">{STATUS_LABELS[log.status as RegistrationStatus] || log.status}</span>
+                                  {log.notes && `: ${log.notes}`}
+                                </p>
+                                <p className="text-gray-400 text-xs">
+                                  {new Date(log.created_at).toLocaleDateString('id-ID', {
+                                    day: 'numeric', month: 'short', year: 'numeric',
+                                    hour: '2-digit', minute: '2-digit'
+                                  })}
+                                </p>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-gray-400 text-center py-4">Belum ada riwayat aktivitas</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
                </div>
 
                {/* Footer Actions */}

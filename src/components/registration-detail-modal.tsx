@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { X } from 'lucide-react';
+import { X, Upload, FileText, Loader2 } from 'lucide-react';
 import type { NKVRegistration, DokterHewanRegistration } from '@/lib/types';
+import { uploadRegistrationDocument, validateFileSize } from '@/lib/storage';
 
 type Registration = (NKVRegistration & { type: 'NKV' }) | (DokterHewanRegistration & { type: 'Dokter Hewan' });
 
@@ -15,6 +16,7 @@ interface RegistrationDetailModalProps {
   registration: Registration;
   onUpdate: (id: string, data: Record<string, unknown>) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  onResubmit?: (id: string, files: Array<{ file_name: string; file_url: string; document_type: string }>) => Promise<void>;
 }
 
 function getStatusLabel(status: string): string {
@@ -45,12 +47,22 @@ function getStatusColor(status: string): string {
   return colors[status] || 'bg-gray-700 text-gray-300 border border-gray-600'
 }
 
+const DOCUMENT_OPTIONS = [
+  { value: 'surat-pernyataan', label: 'Surat Pernyataan Revisi' },
+  { value: 'dokumen-pendukung', label: 'Dokumen Pendukung' },
+  { value: 'surat-izin', label: 'Surat Izin Usaha' },
+  { value: 'sertifikat', label: 'Sertifikat' },
+  { value: 'foto', label: 'Foto / Pas Foto' },
+  { value: 'dokumen-lain', label: 'Dokumen Lainnya' },
+] as const;
+
 export default function RegistrationDetailModal({
   isOpen,
   onClose,
   registration,
   onUpdate,
-  onDelete
+  onDelete,
+  onResubmit
 }: RegistrationDetailModalProps) {
   interface FormData {
     business_name?: string;
@@ -74,42 +86,46 @@ export default function RegistrationDetailModal({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showResubmitConfirm, setShowResubmitConfirm] = useState(false);
+  const [resubmitFiles, setResubmitFiles] = useState<Array<{ file: File; documentType: string; fileUrl: string | null; uploading: boolean }>>([]);
+  const [resubmitUploading, setResubmitUploading] = useState(false);
 
   const handleClose = () => {
     setIsEditing(false);
     setError(null);
     setSuccess(null);
+    setResubmitFiles([]);
     onClose();
   };
 
-   const canEdit = registration.status === 'draft' || registration.status === 'submitted';
-   const canDelete = registration.status === 'draft';
+  const canEdit = registration.status === 'draft' || registration.status === 'submitted';
+  const canDelete = registration.status === 'draft';
+  const canResubmit = registration.status === 'revision_requested';
 
-   const handleEdit = () => {
-     if (!canEdit) return;
-     setIsEditing(true);
-     // Initialize form data with current registration values
-     if (registration.type === 'NKV') {
-       setFormData({
-         business_name: registration.business_name || '',
-         business_address: registration.business_address || '',
-         business_phone: registration.business_phone || '',
-         business_email: registration.business_email || '',
-         business_type: registration.business_type || '',
-         product_type: registration.product_type || '',
-         product_description: registration.product_description || ''
-       });
-     } else if (registration.type === 'Dokter Hewan') {
-       setFormData({
-         full_name: registration.full_name || '',
-         phone: registration.phone || '',
-         email: registration.email || '',
-         clinic_address: registration.clinic_address || '',
-         nib_number: registration.nib_number || '',
-         strv_number: registration.strv_number || ''
-       });
-     }
-   };
+  const handleEdit = () => {
+    if (!canEdit) return;
+    setIsEditing(true);
+    if (registration.type === 'NKV') {
+      setFormData({
+        business_name: registration.business_name || '',
+        business_address: registration.business_address || '',
+        business_phone: registration.business_phone || '',
+        business_email: registration.business_email || '',
+        business_type: registration.business_type || '',
+        product_type: registration.product_type || '',
+        product_description: registration.product_description || ''
+      });
+    } else if (registration.type === 'Dokter Hewan') {
+      setFormData({
+        full_name: registration.full_name || '',
+        phone: registration.phone || '',
+        email: registration.email || '',
+        clinic_address: registration.clinic_address || '',
+        nib_number: registration.nib_number || '',
+        strv_number: registration.strv_number || ''
+      });
+    }
+  };
 
   const handleSave = async () => {
     if (!registration.id) return;
@@ -119,9 +135,8 @@ export default function RegistrationDetailModal({
     setSuccess(null);
 
     try {
-      // Determine which API endpoint to call based on registration type
-      const endpoint = registration.type === 'NKV' 
-        ? `/api/nkv/${registration.id}` 
+      const endpoint = registration.type === 'NKV'
+        ? `/api/nkv/${registration.id}`
         : `/api/dokter-hewan/${registration.id}`;
 
       const response = await fetch(endpoint, {
@@ -133,7 +148,6 @@ export default function RegistrationDetailModal({
       if (response.ok) {
         setSuccess('Permohonan berhasil diperbarui');
         setIsEditing(false);
-        // Notify parent to refresh data and close modal
         await onUpdate(registration.id, formData as Record<string, unknown>);
         onClose();
       } else {
@@ -155,17 +169,13 @@ export default function RegistrationDetailModal({
     setError(null);
 
     try {
-      // Determine which API endpoint to call based on registration type
-      const endpoint = registration.type === 'NKV' 
-        ? `/api/nkv/${registration.id}` 
+      const endpoint = registration.type === 'NKV'
+        ? `/api/nkv/${registration.id}`
         : `/api/dokter-hewan/${registration.id}`;
 
-      const response = await fetch(endpoint, {
-        method: 'DELETE'
-      });
+      const response = await fetch(endpoint, { method: 'DELETE' });
 
       if (response.ok) {
-        // Notify parent to delete the registration
         await onDelete(registration.id);
         onClose();
       } else {
@@ -180,6 +190,76 @@ export default function RegistrationDetailModal({
     }
   };
 
+  const handleAddResubmitFile = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!validateFileSize(file)) {
+      setError('Ukuran file melebihi 1MB');
+      e.target.value = '';
+      return;
+    }
+
+    const docInput = e.target as HTMLInputElement & { dataset: { docType?: string } };
+    const docType = docInput.dataset.docType || 'Dokumen Lainnya';
+
+    setResubmitFiles(prev => [...prev, { file, documentType: docType, fileUrl: null, uploading: false }]);
+    setError(null);
+    e.target.value = '';
+  }, []);
+
+  const handleRemoveResubmitFile = useCallback((index: number) => {
+    setResubmitFiles(prev => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const handleResubmitFiles = async () => {
+    if (!registration.id || !onResubmit) return;
+    setResubmitUploading(true);
+    setError(null);
+
+    try {
+      const uploadResults = await Promise.all(
+        resubmitFiles.map(async (item) => {
+          try {
+            const fileUrl = await uploadRegistrationDocument(
+              item.file,
+              registration.id,
+              item.documentType
+            );
+            return { ...item, fileUrl, uploading: false };
+          } catch {
+            return { ...item, fileUrl: null, uploading: false };
+          }
+        })
+      );
+
+      const successfulUploads = uploadResults.filter(r => r.fileUrl !== null);
+
+      if (successfulUploads.length === 0 && resubmitFiles.length > 0) {
+        setError('Gagal mengunggah semua dokumen. Silakan coba lagi.');
+        setResubmitUploading(false);
+        return;
+      }
+
+      const documentData = successfulUploads.map(r => ({
+        file_name: r.file.name,
+        file_url: r.fileUrl!,
+        document_type: r.documentType,
+      }));
+
+      await onResubmit(registration.id, documentData);
+
+      setSuccess('Permohonan berhasil diajukan kembali');
+      setResubmitFiles([]);
+      onClose();
+    } catch (err) {
+      console.error('Error resubmitting registration:', err);
+      setError('Terjadi kesalahan saat mengajukan ulang');
+    } finally {
+      setResubmitUploading(false);
+    }
+  };
+
   if (!isOpen) {
     return null;
   }
@@ -191,7 +271,7 @@ export default function RegistrationDetailModal({
           <h2 className="text-xl font-bold text-white">
             Detail Permohonan
           </h2>
-          <button 
+          <button
             onClick={handleClose}
             className="text-gray-400 hover:text-white transition-colors"
           >
@@ -217,12 +297,12 @@ export default function RegistrationDetailModal({
             <div className="mb-4 p-4 bg-red-900/40 border-2 border-red-600 rounded-lg">
               <h4 className="font-semibold text-red-100 mb-2">Konfirmasi Hapus</h4>
               <p className="text-red-200 mb-4">
-                Apakah Anda yakin ingin menghapus permohonan <strong className="text-white">{registration.registration_number}</strong>? 
+                Apakah Anda yakin ingin menghapus permohonan <strong className="text-white">{registration.registration_number}</strong>?
                 Tindakan ini tidak dapat dibatalkan.
               </p>
               <div className="flex gap-2 justify-end">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => setShowDeleteConfirm(false)}
                   disabled={loading}
@@ -230,8 +310,8 @@ export default function RegistrationDetailModal({
                 >
                   Batal
                 </Button>
-                <Button 
-                  variant="destructive" 
+                <Button
+                  variant="destructive"
                   size="sm"
                   onClick={handleDelete}
                   disabled={loading}
@@ -242,11 +322,93 @@ export default function RegistrationDetailModal({
             </div>
           )}
 
-           {success && (
-             <div className="mb-4 p-3 bg-green-50 text-green-600 rounded">
-               {success}
-             </div>
-           )}
+          {/* Resubmit Confirmation Dialog */}
+          {showResubmitConfirm && (
+            <div className="mb-4 p-4 bg-blue-900/40 border-2 border-blue-600 rounded-lg">
+              <h4 className="font-semibold text-blue-100 mb-2">Konfirmasi Ajukan Ulang</h4>
+              <p className="text-blue-200 mb-4">
+                Apakah Anda yakin ingin mengajukan ulang permohonan <strong className="text-white">{registration.registration_number}</strong>?
+                Setelah diajukan ulang, status akan berubah menjadi &quot;Diajukan&quot; dan menunggu verifikasi admin.
+              </p>
+
+              {/* File Upload Section */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-blue-100 mb-2">
+                  Unggah Dokumen Revisi
+                </label>
+                <div className="space-y-2">
+                  {resubmitFiles.map((item, index) => (
+                    <div key={index} className="flex items-center justify-between bg-blue-900/30 p-2 rounded">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <FileText className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                        <span className="text-sm text-blue-100 truncate">{item.file.name}</span>
+                        <span className="text-xs text-blue-400">({item.documentType})</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {item.uploading && <Loader2 className="h-4 w-4 text-blue-400 animate-spin" />}
+                        {item.fileUrl && <span className="text-xs text-green-400">✓</span>}
+                        {!item.fileUrl && !item.uploading && <span className="text-xs text-red-400">✗</span>}
+                        <button
+                          onClick={() => handleRemoveResubmitFile(index)}
+                          className="text-gray-400 hover:text-red-400 text-sm"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2 mt-2">
+                  <select className="flex-1 px-3 py-1.5 bg-gray-800 border border-gray-600 rounded text-sm text-gray-200" defaultValue="">
+                    <option value="">Pilih tipe dokumen</option>
+                    {DOCUMENT_OPTIONS.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                  <label className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm cursor-pointer flex items-center gap-1 transition-colors">
+                    <Upload className="h-4 w-4" />
+                    Pilih File
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept=".pdf,.jpg,.png,.jpeg"
+                      onChange={(e) => {
+                        const select = e.target.previousElementSibling?.previousElementSibling as HTMLSelectElement;
+                        const docType = select?.value || 'Dokumen Lainnya';
+                        const clonedEvent = {
+                          ...e,
+                          target: { ...e.target, dataset: { docType } }
+                        } as unknown as React.ChangeEvent<HTMLInputElement>;
+                        handleAddResubmitFile(clonedEvent);
+                      }}
+                    />
+                  </label>
+                </div>
+                <p className="text-xs text-blue-300/60 mt-1">Maksimal 1MB per file. Format: PDF, JPG, PNG</p>
+              </div>
+
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowResubmitConfirm(false)}
+                  disabled={resubmitUploading}
+                  className="border-gray-600 text-gray-300 hover:bg-gray-800"
+                >
+                  Batal
+                </Button>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={handleResubmitFiles}
+                  disabled={resubmitUploading || resubmitFiles.length === 0}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {resubmitUploading ? 'Mengunggah & Mengajukan...' : 'Ya, Ajukan Ulang'}
+                </Button>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-6 text-gray-200">
             {/* Registration Info */}
@@ -342,8 +504,8 @@ export default function RegistrationDetailModal({
               </>
             )}
 
-              {/* Edit Form */}
-              {isEditing && (
+            {/* Edit Form */}
+            {isEditing && (
               <div className="space-y-4">
                 {registration.type === 'NKV' && (
                   <>
@@ -400,8 +562,8 @@ export default function RegistrationDetailModal({
                         <option value="budidaya-unggas-perah">Usaha budidaya unggas perah</option>
                         <option value="pengolahan-daging">Unit pengolahan daging</option>
                         <option value="pengolahan-susu">Unit pengolahan susu</option>
-                         <option value="pengolahan-telur">Unit pengolahan telur</option>
-                    </select>
+                        <option value="pengolahan-telur">Unit pengolahan telur</option>
+                      </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1 text-gray-300">Jenis Produk</label>
@@ -412,7 +574,7 @@ export default function RegistrationDetailModal({
                       >
                         <option value="">Pilih jenis produk</option>
                         <option value="daging-sapi">Daging Sapi</option>
-                         <option value="daging-kambing">Daging Kambing</option>
+                        <option value="daging-kambing">Daging Kambing</option>
                       </select>
                     </div>
                     <div>
@@ -473,21 +635,20 @@ export default function RegistrationDetailModal({
                         className="bg-gray-800 border-gray-600 text-white"
                       />
                     </div>
-                   </>
-                  )}
-                </div>
-              )}
+                  </>
+                )}
+              </div>
+            )}
 
-              {/* Documents Section */}
+            {/* Documents Section */}
             <div>
               <h3 className="font-medium text-blue-300 mb-2">Lihat Rekomendasi dan Dokumen yang Diunggah:</h3>
-              {/* This would be populated with actual document data */}
               <p className="text-sm text-gray-400">
-                {registration.type === 'NKV' 
-                  ? (registration.recommendation_file_url ? 
-                    <a href={registration.recommendation_file_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline hover:text-blue-300">
-                      Lihat Rekomendasi
-                    </a>
+                {registration.type === 'NKV'
+                  ? (registration.recommendation_file_url
+                    ? <a href={registration.recommendation_file_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline hover:text-blue-300">
+                        Lihat Rekomendasi
+                      </a>
                     : 'Belum ada dokumen yang diunggah')
                   : (registration.color_photo_url || registration.diploma_url || registration.competency_cert_url || registration.professional_recommendation_url
                     ? <div className="space-y-1">
@@ -526,62 +687,73 @@ export default function RegistrationDetailModal({
                       </div>
                     : 'Belum ada dokumen yang diunggah'
                   )}
-                </p>
+              </p>
             </div>
           </div>
         </div>
-          {/* Footer Actions */}
-          <div className="p-6 bg-gray-800 border-t border-gray-700 flex flex-wrap gap-2 justify-end">
-            <Button variant="outline" onClick={handleClose} className="border-gray-600 text-gray-300 hover:bg-gray-700">
-              Tutup
+
+        {/* Footer Actions */}
+        <div className="p-6 bg-gray-800 border-t border-gray-700 flex flex-wrap gap-2 justify-end">
+          <Button variant="outline" onClick={handleClose} className="border-gray-600 text-gray-300 hover:bg-gray-700">
+            Tutup
+          </Button>
+
+          {!isEditing && canEdit && (
+            <Button
+              variant="secondary"
+              onClick={handleEdit}
+              className="bg-blue-600 hover:bg-blue-700 text-white border-blue-500"
+            >
+              Edit Permohonan
             </Button>
-            
-            {!isEditing && canEdit && (
-              <Button 
-                variant="secondary"
-                onClick={handleEdit}
-                className="bg-blue-600 hover:bg-blue-700 text-white border-blue-500"
+          )}
+
+          {!isEditing && canDelete && (
+            <Button
+              variant="destructive"
+              onClick={() => setShowDeleteConfirm(true)}
+            >
+              Hapus Permohonan
+            </Button>
+          )}
+
+          {!isEditing && canResubmit && onResubmit && (
+            <Button
+              variant="default"
+              onClick={() => setShowResubmitConfirm(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Ajukan Ulang
+            </Button>
+          )}
+
+          {!canEdit && !canResubmit && !isEditing && (
+            <span className="text-sm text-gray-500 flex items-center py-2">
+              Permohonan dalam status &quot;{getStatusLabel(registration.status)}&quot; tidak dapat diedit
+            </span>
+          )}
+
+          {isEditing && (
+            <>
+              <Button
+                variant="default"
+                onClick={handleSave}
+                disabled={loading}
+                className="bg-green-600 hover:bg-green-700"
               >
-                Edit Permohonan
+                {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
               </Button>
-            )}
-            
-            {!isEditing && canDelete && (
-              <Button 
-                variant="destructive"
-                onClick={() => setShowDeleteConfirm(true)}
+              <Button
+                variant="outline"
+                onClick={() => setIsEditing(false)}
+                disabled={loading}
+                className="border-gray-600 text-gray-300 hover:bg-gray-700"
               >
-                Hapus Permohonan
+                Batal
               </Button>
-            )}
-            
-            {!canEdit && !isEditing && (
-              <span className="text-sm text-gray-500 flex items-center py-2">
-                Permohonan dalam status &quot;{getStatusLabel(registration.status)}&quot; tidak dapat diedit
-              </span>
-            )}
-            
-            {isEditing && (
-              <>
-                <Button 
-                  variant="default"
-                  onClick={handleSave}
-                  disabled={loading}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
-                </Button>
-                <Button 
-                  variant="outline"
-                  onClick={() => setIsEditing(false)}
-                  disabled={loading}
-                  className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                >
-                  Batal
-                </Button>
-              </>
-            )}
-          </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

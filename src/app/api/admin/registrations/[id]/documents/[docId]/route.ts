@@ -70,33 +70,43 @@ export async function PATCH(
       return NextResponse.json({ error: updateError.message }, { status: 500 })
     }
 
-    // If all documents approved and registration is in 'submitted' status, move to 'document_verification'
-    if (newStatus === 'approved') {
-      const { data: docs } = await serviceSupabase
-        .from('registration_documents')
-        .select('status')
-        .eq('registration_id', id)
+// If all documents approved, move to document_verification
+     if (newStatus === 'approved') {
+       const { data: docs } = await serviceSupabase
+         .from('registration_documents')
+         .select('status')
+         .eq('registration_id', id)
 
-      const allApproved = docs && docs.every(doc => doc.status === 'approved')
+       const allApproved = docs && docs.every(doc => doc.status === 'approved')
 
-      if (allApproved) {
-        await serviceSupabase
-          .from('nkv_registrations')
-          .update({ status: 'document_verification' })
-          .eq('id', id)
+       if (allApproved) {
+         // Determine registration type
+         const { data: nkvCheck } = await serviceSupabase
+           .from('nkv_registrations')
+           .select('id')
+           .eq('id', id)
+           .single()
 
-        // Add tracking log
-        await serviceSupabase.from('tracking_logs').insert({
-          nkv_registration_id: id,
-          dokter_hewan_registration_id: null,
-          registration_type: 'NKV',
-          status: 'document_verification',
-          notes: 'Semua dokumen telah diverifikasi dan disetujui',
-          created_by: user.id,
-          created_at: new Date().toISOString()
-        })
-      }
-    }
+         const isNKV = !!nkvCheck
+         const tableName = isNKV ? 'nkv_registrations' : 'dokter_hewan_registrations'
+
+         await serviceSupabase
+           .from(tableName)
+           .update({ status: 'document_verification' })
+           .eq('id', id)
+
+         // Add tracking log
+         await serviceSupabase.from('tracking_logs').insert({
+           nkv_registration_id: isNKV ? id : null,
+           dokter_hewan_registration_id: isNKV ? null : id,
+           registration_type: isNKV ? 'NKV' : 'Dokter Hewan',
+           status: 'document_verification',
+           notes: 'Semua dokumen telah diverifikasi dan disetujui',
+           created_by: user.id,
+           created_at: new Date().toISOString()
+         })
+       }
+     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
