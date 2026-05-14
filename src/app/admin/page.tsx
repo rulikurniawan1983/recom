@@ -17,6 +17,8 @@ import {
   Shield,
   File,
   Users,
+  X,
+  Menu,
   Search,
   Calendar,
   ClipboardCheck
@@ -115,7 +117,8 @@ export default function AdminPage() {
     const [statusFilter, setStatusFilter] = useState<RegistrationStatus | 'all'>('all');
     const [typeFilter, setTypeFilter] = useState<'all' | 'NKV' | 'Dokter Hewan'>('all');
     const [viewMode, setViewMode] = useState<'dashboard' | 'applications' | 'users' | 'verification'>('dashboard');
-   const [selectedReg, setSelectedReg] = useState<AdminRegistration | null>(null);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [selectedReg, setSelectedReg] = useState<AdminRegistration | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
    const [documentsTab, setDocumentsTab] = useState('documents');
@@ -644,18 +647,24 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar - always visible */}
-      <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200">
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <Shield className="h-5 w-5 text-white" />
-              </div>
-              <span className="font-bold text-gray-900">Admin Panel</span>
-            </div>
-          </div>
+       {/* Sidebar */}
+       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+         <div className="flex flex-col h-full">
+           {/* Header */}
+           <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
+             <div className="flex items-center gap-2">
+               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                 <Shield className="h-5 w-5 text-white" />
+               </div>
+               <span className="font-bold text-gray-900">Admin Panel</span>
+             </div>
+             <button
+               onClick={() => setSidebarOpen(false)}
+               className="lg:hidden text-gray-500 hover:text-gray-700"
+             >
+               <X className="h-5 w-5" />
+             </button>
+           </div>
 
             {/* Navigation */}
             <nav className="flex-1 px-4 py-6 space-y-1">
@@ -732,9 +741,28 @@ export default function AdminPage() {
        </aside>
 
        {/* Main Content */}
-       <div className="flex-1 flex flex-col min-w-0 pl-64">
+       <div className="flex-1 flex flex-col min-w-0">
+         {/* Mobile Header */}
+         <header className="bg-white border-b border-gray-200 lg:hidden">
+           <div className="flex items-center justify-between h-16 px-4">
+             <button
+               onClick={() => setSidebarOpen(true)}
+               className="text-gray-500 hover:text-gray-700"
+             >
+               <Menu className="h-6 w-6" />
+             </button>
+             <div className="flex items-center gap-2">
+               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                 <Shield className="h-5 w-5 text-white" />
+               </div>
+               <span className="font-bold text-gray-900">Admin</span>
+             </div>
+             <div className="w-6" />
+           </div>
+         </header>
+
          {/* Page Content */}
-        <main className="flex-1 p-4 lg:p-8 overflow-auto">
+         <main className="flex-1 p-4 lg:p-8 overflow-auto lg:pl-64">
           {/* Dashboard View */}
           {viewMode === 'dashboard' && (
             <>

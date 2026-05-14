@@ -284,24 +284,24 @@ const handleResubmit = async (id: string, files?: Array<{ file_name: string; fil
         </div>
       </aside>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="bg-white border-b border-gray-200 lg:hidden">
-          <div className="flex items-center justify-between h-16 px-4">
-            <button onClick={() => setIsMobileMenuOpen(true)} className="text-gray-500 hover:text-gray-700">
-              <Menu className="h-6 w-6" />
-            </button>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <Activity className="h-5 w-5 text-white" />
-              </div>
-              <span className="font-bold text-gray-900">VetSys</span>
-            </div>
-            <div className="w-6" />
-          </div>
-        </header>
+       {/* Main Content */}
+       <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
+         <header className="bg-white border-b border-gray-200 lg:hidden">
+           <div className="flex items-center justify-between h-16 px-4">
+             <button onClick={() => setIsMobileMenuOpen(true)} className="text-gray-500 hover:text-gray-700">
+               <Menu className="h-6 w-6" />
+             </button>
+             <div className="flex items-center gap-2">
+               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                 <Activity className="h-5 w-5 text-white" />
+               </div>
+               <span className="font-bold text-gray-900">VetSys</span>
+             </div>
+             <div className="w-6" />
+           </div>
+         </header>
 
-        <main className="flex-1 p-4 lg:p-8 overflow-auto">
+         <main className="flex-1 p-4 lg:p-8 overflow-auto">
           {/* Welcome */}
           <div className="mb-8">
             <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Dashboard</h1>
