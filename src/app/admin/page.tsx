@@ -418,14 +418,14 @@ const openDetailModal = async (reg: AdminRegistration) => {
 
            const data = JSON.parse(text);
 
-           if (!data.type) {
+           if (!data.regType) {
              throw new Error('Data tidak valid');
            }
 
            let fullReg: Registration | null = null;
-           if (data.type === 'NKV') {
+           if (data.regType === 'NKV') {
              fullReg = { ...data, type: 'NKV' as const };
-           } else if (data.type === 'Dokter Hewan') {
+           } else if (data.regType === 'Dokter Hewan') {
              fullReg = { ...data, type: 'Dokter Hewan' as const };
            }
 
