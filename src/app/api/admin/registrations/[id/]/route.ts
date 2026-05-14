@@ -37,52 +37,113 @@ export async function GET(request: NextRequest) {
       auth: { autoRefreshToken: false, persistSession: false },
     })
 
-    // Determine registration type first
-    const { data: nkvReg } = await serviceSupabase
+    let fullReg: any = null
+
+    // First check NKV registrations
+    const { data: nkvReg, error: nkvCheckError } = await serviceSupabase
       .from('nkv_registrations')
       .select('id')
       .eq('id', id)
       .single()
 
-    let fullReg: any = null
+    if (nkvCheckError) {
+      console.error('Error checking NKV registration:', nkvCheckError)
+    }
 
     if (nkvReg) {
-      const { data, error } = await serviceSupabase
+      // NKV registration found - fetch full details
+      const { data: nkvData, error: nkvError } = await serviceSupabase
         .from('nkv_registrations')
         .select(`
-          *,
-          profiles!inner(full_name, email),
-          business_units(name, address, phone, email, business_type),
-          product_types(name, description, category),
-          registration_documents(
-            id, document_type, file_url, file_name, status, uploaded_at, admin_notes
-          ),
+          id,
+          user_id,
+          registration_number,
+          business_name,
+          business_address,
+          business_phone,
+          business_email,
+          business_type,
+          product_type,
+          product_description,
+          status,
+          verification_notes,
+          inspector_id,
+          inspection_date,
+          inspection_notes,
+          assessment_score,
+          assessment_notes,
+          recommendation_file_url,
+          created_at,
+          updated_at,
+          approved_at,
+          profiles(full_name, email),
+          business_units(id, name, address, phone, email, business_type),
+          product_types(id, name, description, category),
+          registration_documents(id, document_type, file_url, file_name, status, uploaded_at, admin_notes),
           tracking_logs(id, status, created_at, notes, created_by)
         `)
         .eq('id', id)
         .single()
 
-      if (error) throw error
-      if (data) {
-        fullReg = { ...data, type: 'NKV' as const }
+      if (nkvError) {
+        console.error('Error fetching NKV registration:', nkvError)
+        return NextResponse.json(
+          { error: 'Gagal mengambil data NKV: ' + nkvError.message },
+          { status: 500 }
+        )
+      }
+
+      if (nkvData) {
+        fullReg = { ...nkvData, type: 'NKV' }
       }
     } else {
-      const { data, error } = await serviceSupabase
+      // Check Dokter Hewan registrations
+      const { data: dhData, error: dhError } = await serviceSupabase
         .from('dokter_hewan_registrations')
         .select(`
-          *,
-          profiles!inner(full_name, email),
-          registration_documents(
-            id, document_type, file_url, file_name, status, uploaded_at, admin_notes
-          ),
+          id,
+          user_id,
+          registration_number,
+          full_name,
+          birth_place_date,
+          ktp_address,
+          clinic_address,
+          phone,
+          email,
+          color_photo_url,
+          diploma_url,
+          competency_cert_url,
+          professional_recommendation_url,
+          nib_number,
+          strv_number,
+          status,
+          verification_notes,
+          inspector_id,
+          inspection_date,
+          inspection_notes,
+          assessment_score,
+          assessment_notes,
+          recommendation_file_url,
+          created_at,
+          updated_at,
+          approved_at,
+          profiles(full_name, email),
+          registration_documents(id, document_type, file_url, file_name, status, uploaded_at, admin_notes),
           tracking_logs(id, status, created_at, notes, created_by)
         `)
         .eq('id', id)
         .single()
 
-      if (error) throw error
-      if (data) {
-        fullReg = { ...data, type: 'Dokter Hewan' as const }
+      if (dhError) {
+        console.error('Error fetching Dokter Hewan registration:', dhError)
+        return NextResponse.json(
+          { error: 'Gagal mengambil data Dokter Hewan: ' + dhError.message },
+          { status: 500 }
+        )
+      }
+
+      if (dhData) {
+        fullReg = { ...dhData, type: 'Dokter Hewan' }
       }
     }
 
