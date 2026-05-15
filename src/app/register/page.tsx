@@ -19,7 +19,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
-  const [regType, setRegType] = useState<'nkv' | 'dokter-hewan' | null>(null)
+  const [regType, setRegType] = useState<'nkv' | 'dokter-hewan' | 'veterinary' | ''>('')
   const router = useRouter()
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -56,16 +56,18 @@ export default function RegisterPage() {
 
       setSuccess(true)
 
-      // Redirect to appropriate registration form
-      setTimeout(() => {
-        if (regType === 'nkv') {
-          router.push('/nkv/register')
-        } else if (regType === 'dokter-hewan') {
-          router.push('/dokter-hewan/register')
-        } else {
-          router.push('/login')
-        }
-      }, 1500)
+       // Redirect to appropriate registration form
+       setTimeout(() => {
+         if (regType === 'nkv') {
+           router.push('/nkv/register')
+         } else if (regType === 'dokter-hewan') {
+           router.push('/dokter-hewan/register')
+         } else if (regType === 'veterinary') {
+           router.push('/services/veterinary/register')
+         } else {
+           router.push('/dashboard')
+         }
+       }, 1500)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan')
     } finally {
@@ -76,12 +78,12 @@ export default function RegisterPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Daftar Akun</CardTitle>
-          <CardDescription>
-            Buat akun untuk mengakses sistem rekomendasi
-          </CardDescription>
-        </CardHeader>
+<CardHeader className="text-center">
+  <CardTitle className="text-2xl font-bold">Daftar Akun</CardTitle>
+  <CardDescription>
+    Buat akun untuk mengakses semua layanan SLIDER - VETSYS: pelayanan kesehatan hewan, rekomendasi NKV, dan rekomendasi praktek dokter hewan
+  </CardDescription>
+</CardHeader>
         <CardContent>
           <form onSubmit={handleRegister} className="space-y-4">
             {error && (
@@ -150,50 +152,20 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Registration Type Selection */}
-            <div className="space-y-3 pt-2">
-              <Label className="text-sm font-medium text-gray-700">Pilih Jenis Permohonan</Label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setRegType('nkv')}
-                  className={`p-4 rounded-lg border-2 text-center transition-all ${
-                    regType === 'nkv'
-                      ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-600/20'
-                      : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/50'
-                  }`}
+              {/* Registration Type Selection */}
+              <div className="space-y-3 pt-2">
+                <Label className="text-sm font-medium text-gray-700">Pilih Jenis Permohonan</Label>
+                <select 
+                  value={regType}
+                  onChange={(e) => setRegType(e.target.value as 'nkv' | 'dokter-hewan' | 'veterinary' | '')}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-blue-800 focus:ring-2 focus:ring-blue-500"
                 >
-                  <div className="flex flex-col items-center gap-2">
-                    <FileText className={`h-6 w-6 ${regType === 'nkv' ? 'text-blue-600' : 'text-gray-400'}`} />
-                    <span className={`text-sm font-medium ${regType === 'nkv' ? 'text-blue-700' : 'text-gray-700'}`}>
-                      NKV
-                    </span>
-                    <span className="text-xs text-gray-500 hidden sm:block">
-                      Nomor Kontrol Veteriner
-                    </span>
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRegType('dokter-hewan')}
-                  className={`p-4 rounded-lg border-2 text-center transition-all ${
-                    regType === 'dokter-hewan'
-                      ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-600/20'
-                      : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/50'
-                  }`}
-                >
-                  <div className="flex flex-col items-center gap-2">
-                    <Stethoscope className={`h-6 w-6 ${regType === 'dokter-hewan' ? 'text-blue-600' : 'text-gray-400'}`} />
-                    <span className={`text-sm font-medium ${regType === 'dokter-hewan' ? 'text-blue-700' : 'text-gray-700'}`}>
-                      Dokter Hewan
-                    </span>
-                    <span className="text-xs text-gray-500 hidden sm:block">
-                      Praktek Dokter Hewan
-                    </span>
-                  </div>
-                </button>
+                  <option value="">Pilih jenis permohonan</option>
+                  <option value="veterinary">Pelayanan Kesehatan Hewan</option>
+                  <option value="nkv">Nomor Kontrol Veteriner (NKV)</option>
+                  <option value="dokter-hewan">Rekomendasi Praktek Dokter Hewan</option>
+                </select>
               </div>
-            </div>
 
             <Button type="submit" className="w-full" disabled={loading || !regType}>
               {loading ? 'Loading...' : 'Daftar & Lanjut ke Formulir'}

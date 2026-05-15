@@ -338,6 +338,41 @@ export interface RegistrationDocument {
   admin_notes?: string | null
 }
 
+export interface VeterinaryRegistration {
+  id: string
+  user_id: string
+  pet_name: string
+  pet_type: string
+  pet_breed: string | null
+  pet_age: string | null
+  pet_gender: 'jantan' | 'betina' | 'lainnya' | null
+  owner_name: string
+  owner_phone: string | null
+  owner_address: string | null
+  registration_number: string
+  status: RegistrationStatus
+  verification_notes: string | null
+  inspector_id: string | null
+  inspection_date: string | null
+  inspection_notes: string | null
+  assessment_score: number | null
+  assessment_notes: string | null
+  recommendation_file_url: string | null
+  created_at: string
+  updated_at: string
+  approved_at: string | null
+  profiles?: {
+    full_name: string | null
+    email: string
+  }
+  registration_documents?: RegistrationDocument[]
+  tracking_logs?: Array<{
+    id: string
+    status: string
+    created_at: string
+  }>
+}
+
 export interface InspectionSchedule {
   id: string
   registration_id: string

@@ -22,7 +22,7 @@ const services: ServiceOption[] = [
     title: 'Registrasi Hewan',
     description: 'Daftarkan hewan peliharaan baru ke sistem',
     icon: <Heart className="h-8 w-8" />,
-    href: '/dashboard/pets/register',
+    href: '/services/veterinary/register',
     color: 'text-blue-600',
     bgColor: 'bg-blue-100',
   },

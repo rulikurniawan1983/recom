@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 import DashboardClient from './dashboard-client'
-import type { Profile, NKVRegistration, DokterHewanRegistration } from '@/lib/types'
+import type { Profile, NKVRegistration, DokterHewanRegistration, VeterinaryRegistration } from '@/lib/types'
 import { TrackingModalProvider } from '@/contexts/tracking-modal-context'
 
 export default async function DashboardPage() {
@@ -38,6 +38,12 @@ export default async function DashboardPage() {
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
+  const { data: veterinaryRegistrations } = await supabase
+    .from('veterinary_registrations')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+
   return (
     <TrackingModalProvider>
       <DashboardClient
@@ -45,6 +51,7 @@ export default async function DashboardPage() {
         profile={profile as Profile | null}
         nkvRegistrations={(nkvRegistrations ?? []) as NKVRegistration[]}
         dokterRegistrations={(dokterRegistrations ?? []) as DokterHewanRegistration[]}
+        veterinaryRegistrations={(veterinaryRegistrations ?? []) as VeterinaryRegistration[]}
       />
     </TrackingModalProvider>
   )

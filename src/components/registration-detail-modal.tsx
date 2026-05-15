@@ -5,10 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { X, Upload, FileText, Loader2 } from 'lucide-react';
-import type { NKVRegistration, DokterHewanRegistration } from '@/lib/types';
+import type { NKVRegistration, DokterHewanRegistration, VeterinaryRegistration } from '@/lib/types';
 import { uploadRegistrationDocument, validateFileSize } from '@/lib/storage';
 
-type Registration = (NKVRegistration & { type: 'NKV' }) | (DokterHewanRegistration & { type: 'Dokter Hewan' });
+type Registration = (NKVRegistration & { type: 'NKV' }) | (DokterHewanRegistration & { type: 'Dokter Hewan' }) | (VeterinaryRegistration & { type: 'Veterinary' });
 
 interface RegistrationDetailModalProps {
   isOpen: boolean;
@@ -78,6 +78,14 @@ export default function RegistrationDetailModal({
     clinic_address?: string;
     nib_number?: string;
     strv_number?: string;
+    petName?: string;
+    petType?: string;
+    petBreed?: string;
+    petAge?: string;
+    petGender?: string;
+    ownerName?: string;
+    ownerPhone?: string;
+    ownerAddress?: string;
   }
 
   const [isEditing, setIsEditing] = useState(false);
@@ -124,6 +132,17 @@ export default function RegistrationDetailModal({
         nib_number: registration.nib_number || '',
         strv_number: registration.strv_number || ''
       });
+    } else if (registration.type === 'Veterinary') {
+      setFormData({
+        petName: registration.pet_name || '',
+        petType: registration.pet_type || '',
+        petBreed: registration.pet_breed || '',
+        petAge: registration.pet_age || '',
+        petGender: registration.pet_gender || '',
+        ownerName: registration.owner_name || '',
+        ownerPhone: registration.owner_phone || '',
+        ownerAddress: registration.owner_address || ''
+      });
     }
   };
 
@@ -137,7 +156,9 @@ export default function RegistrationDetailModal({
     try {
       const endpoint = registration.type === 'NKV'
         ? `/api/nkv/${registration.id}`
-        : `/api/dokter-hewan/${registration.id}`;
+        : registration.type === 'Dokter Hewan'
+          ? `/api/dokter-hewan/${registration.id}`
+          : `/api/veterinary/${registration.id}`;
 
       const response = await fetch(endpoint, {
         method: 'PUT',
@@ -267,14 +288,10 @@ export default function RegistrationDetailModal({
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
       <div className="w-full max-w-2xl bg-gray-900 border border-gray-700 rounded-lg shadow-2xl">
+        {/* Header */}
         <div className="flex justify-between items-start p-6 border-b border-gray-700">
-          <h2 className="text-xl font-bold text-white">
-            Detail Permohonan
-          </h2>
-          <button
-            onClick={handleClose}
-            className="text-gray-400 hover:text-white transition-colors"
-          >
+          <h2 className="text-xl font-bold text-white">Detail Permohonan</h2>
+          <button onClick={handleClose} className="text-gray-400 hover:text-white transition-colors">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -293,6 +310,11 @@ export default function RegistrationDetailModal({
           )}
 
           {/* Delete Confirmation Dialog */}
+          <span className="lg:hidden" />
+
+          {/* Resubmit Confirmation Dialog */}
+          <span className="lg:hidden" />
+
           {showDeleteConfirm && (
             <div className="mb-4 p-4 bg-red-900/40 border-2 border-red-600 rounded-lg">
               <h4 className="font-semibold text-red-100 mb-2">Konfirmasi Hapus</h4>
@@ -301,28 +323,16 @@ export default function RegistrationDetailModal({
                 Tindakan ini tidak dapat dibatalkan.
               </p>
               <div className="flex gap-2 justify-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowDeleteConfirm(false)}
-                  disabled={loading}
-                  className="border-gray-600 text-gray-300 hover:bg-gray-800"
-                >
+                <Button variant="outline" size="sm" onClick={() => setShowDeleteConfirm(false)} disabled={loading} className="border-gray-600 text-gray-300 hover:bg-gray-800">
                   Batal
                 </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={handleDelete}
-                  disabled={loading}
-                >
+                <Button variant="destructive" size="sm" onClick={handleDelete} disabled={loading}>
                   {loading ? 'Menghapus...' : 'Ya, Hapus'}
                 </Button>
               </div>
             </div>
           )}
 
-          {/* Resubmit Confirmation Dialog */}
           {showResubmitConfirm && (
             <div className="mb-4 p-4 bg-blue-900/40 border-2 border-blue-600 rounded-lg">
               <h4 className="font-semibold text-blue-100 mb-2">Konfirmasi Ajukan Ulang</h4>
@@ -346,12 +356,9 @@ export default function RegistrationDetailModal({
                       </div>
                       <div className="flex items-center gap-2">
                         {item.uploading && <Loader2 className="h-4 w-4 text-blue-400 animate-spin" />}
-                        {item.fileUrl && <span className="text-xs text-green-400">✓</span>}
-                        {!item.fileUrl && !item.uploading && <span className="text-xs text-red-400">✗</span>}
-                        <button
-                          onClick={() => handleRemoveResubmitFile(index)}
-                          className="text-gray-400 hover:text-red-400 text-sm"
-                        >
+                        {item.fileUrl && <span className="text-xs text-green-400">&#10003;</span>}
+                        {!item.fileUrl && !item.uploading && <span className="text-xs text-red-400">&#10007;</span>}
+                        <button onClick={() => handleRemoveResubmitFile(index)} className="text-gray-400 hover:text-red-400 text-sm">
                           <X className="h-4 w-4" />
                         </button>
                       </div>
@@ -368,42 +375,25 @@ export default function RegistrationDetailModal({
                   <label className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm cursor-pointer flex items-center gap-1 transition-colors">
                     <Upload className="h-4 w-4" />
                     Pilih File
-                    <input
-                      type="file"
-                      className="hidden"
-                      accept=".pdf,.jpg,.png,.jpeg"
-                      onChange={(e) => {
-                        const select = e.target.previousElementSibling?.previousElementSibling as HTMLSelectElement;
-                        const docType = select?.value || 'Dokumen Lainnya';
-                        const clonedEvent = {
-                          ...e,
-                          target: { ...e.target, dataset: { docType } }
-                        } as unknown as React.ChangeEvent<HTMLInputElement>;
-                        handleAddResubmitFile(clonedEvent);
-                      }}
-                    />
+                    <input type="file" className="hidden" accept=".pdf,.jpg,.png,.jpeg" onChange={(e) => {
+                      const select = e.target.previousElementSibling?.previousElementSibling as HTMLSelectElement;
+                      const docType = select?.value || 'Dokumen Lainnya';
+                      const clonedEvent = {
+                        ...e,
+                        target: { ...e.target, dataset: { docType } }
+                      } as unknown as React.ChangeEvent<HTMLInputElement>;
+                      handleAddResubmitFile(clonedEvent);
+                    }} />
                   </label>
                 </div>
                 <p className="text-xs text-blue-300/60 mt-1">Maksimal 1MB per file. Format: PDF, JPG, PNG</p>
               </div>
 
               <div className="flex gap-2 justify-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowResubmitConfirm(false)}
-                  disabled={resubmitUploading}
-                  className="border-gray-600 text-gray-300 hover:bg-gray-800"
-                >
+                <Button variant="outline" size="sm" onClick={() => setShowResubmitConfirm(false)} disabled={resubmitUploading} className="border-gray-600 text-gray-300 hover:bg-gray-800">
                   Batal
                 </Button>
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={handleResubmitFiles}
-                  disabled={resubmitUploading || resubmitFiles.length === 0}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
+                <Button variant="default" size="sm" onClick={handleResubmitFiles} disabled={resubmitUploading || resubmitFiles.length === 0} className="bg-blue-600 hover:bg-blue-700 text-white">
                   {resubmitUploading ? 'Mengunggah & Mengajukan...' : 'Ya, Ajukan Ulang'}
                 </Button>
               </div>
@@ -434,72 +424,68 @@ export default function RegistrationDetailModal({
               )}
             </div>
 
-            {/* Form Fields */}
+            {/* View Mode */}
             {!isEditing && (
               <>
                 {registration.type === 'NKV' && (
-                  <>
-                    <div className="space-y-3">
-                      <div>
-                        <p className="font-medium text-gray-300">Nama Unit Usaha:</p>
-                        <p className="text-blue-300">{registration.business_name || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-300">Alamat:</p>
-                        <p className="text-blue-300">{registration.business_address || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-300">Telepon:</p>
-                        <p className="text-blue-300">{registration.business_phone || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-300">Email:</p>
-                        <p className="text-blue-300">{registration.business_email || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-300">Jenis Usaha:</p>
-                        <p className="text-blue-300">{registration.business_type || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-300">Jenis Produk:</p>
-                        <p className="text-blue-300">{registration.product_type || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-300">Deskripsi Produk:</p>
-                        <p className="text-blue-300">{registration.product_description || '-'}</p>
-                      </div>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="font-medium text-gray-300">Nama Unit Usaha:</p>
+                      <p className="text-blue-300">{registration.business_name || '-'}</p>
                     </div>
-                  </>
+                    <div>
+                      <p className="font-medium text-gray-300">Alamat:</p>
+                      <p className="text-blue-300">{registration.business_address || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-300">Telepon:</p>
+                      <p className="text-blue-300">{registration.business_phone || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-300">Email:</p>
+                      <p className="text-blue-300">{registration.business_email || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-300">Jenis Usaha:</p>
+                      <p className="text-blue-300">{registration.business_type || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-300">Jenis Produk:</p>
+                      <p className="text-blue-300">{registration.product_type || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-300">Deskripsi Produk:</p>
+                      <p className="text-blue-300">{registration.product_description || '-'}</p>
+                    </div>
+                  </div>
                 )}
                 {registration.type === 'Dokter Hewan' && (
-                  <>
-                    <div className="space-y-3">
-                      <div>
-                        <p className="font-medium text-gray-300">Nama Lengkap:</p>
-                        <p className="text-blue-300">{registration.full_name || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-300">Telepon:</p>
-                        <p className="text-blue-300">{registration.phone || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-300">Email:</p>
-                        <p className="text-blue-300">{registration.email || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-300">Alamat Klinik:</p>
-                        <p className="text-blue-300">{registration.clinic_address || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-300">NIB:</p>
-                        <p className="text-blue-300">{registration.nib_number || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-300">STRV:</p>
-                        <p className="text-blue-300">{registration.strv_number || '-'}</p>
-                      </div>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="font-medium text-gray-300">Nama Lengkap:</p>
+                      <p className="text-blue-300">{registration.full_name || '-'}</p>
                     </div>
-                  </>
+                    <div>
+                      <p className="font-medium text-gray-300">Telepon:</p>
+                      <p className="text-blue-300">{registration.phone || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-300">Email:</p>
+                      <p className="text-blue-300">{registration.email || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-300">Alamat Klinik:</p>
+                      <p className="text-blue-300">{registration.clinic_address || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-300">NIB:</p>
+                      <p className="text-blue-300">{registration.nib_number || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-300">STRV:</p>
+                      <p className="text-blue-300">{registration.strv_number || '-'}</p>
+                    </div>
+                  </div>
                 )}
               </>
             )}
@@ -511,48 +497,23 @@ export default function RegistrationDetailModal({
                   <>
                     <div>
                       <label className="block text-sm font-medium mb-1 text-gray-300">Nama Unit Usaha</label>
-                      <Input
-                        value={formData.business_name || ''}
-                        onChange={(e) => setFormData({...formData, business_name: e.target.value})}
-                        required
-                        className="bg-gray-800 border-gray-600 text-white"
-                      />
+                      <Input value={formData.business_name || ''} onChange={(e) => setFormData({ ...formData, business_name: e.target.value })} required className="bg-gray-800 border-gray-600 text-white" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1 text-gray-300">Alamat</label>
-                      <Textarea
-                        value={formData.business_address || ''}
-                        onChange={(e) => setFormData({...formData, business_address: e.target.value})}
-                        required
-                        rows={3}
-                        className="bg-gray-800 border-gray-600 text-white"
-                      />
+                      <Textarea value={formData.business_address || ''} onChange={(e) => setFormData({ ...formData, business_address: e.target.value })} required rows={3} className="bg-gray-800 border-gray-600 text-white" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1 text-gray-300">Telepon</label>
-                      <Input
-                        value={formData.business_phone || ''}
-                        onChange={(e) => setFormData({...formData, business_phone: e.target.value})}
-                        className="bg-gray-800 border-gray-600 text-white"
-                      />
+                      <Input value={formData.business_phone || ''} onChange={(e) => setFormData({ ...formData, business_phone: e.target.value })} className="bg-gray-800 border-gray-600 text-white" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1 text-gray-300">Email</label>
-                      <Input
-                        value={formData.business_email || ''}
-                        onChange={(e) => setFormData({...formData, business_email: e.target.value})}
-                        type="email"
-                        className="bg-gray-800 border-gray-600 text-white"
-                      />
+                      <Input value={formData.business_email || ''} onChange={(e) => setFormData({ ...formData, business_email: e.target.value })} type="email" className="bg-gray-800 border-gray-600 text-white" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1 text-gray-300">Jenis Usaha</label>
-                      <select
-                        value={formData.business_type || ''}
-                        onChange={(e) => setFormData({...formData, business_type: e.target.value})}
-                        className="w-full rounded-md border border-gray-600 px-3 py-2 bg-gray-800 text-white"
-                        required
-                      >
+                      <select value={formData.business_type || ''} onChange={(e) => setFormData({ ...formData, business_type: e.target.value })} className="w-full rounded-md border border-gray-600 px-3 py-2 bg-gray-800 text-white" required>
                         <option value="">Pilih jenis usaha</option>
                         <option value="rph-ruminansia">RPH Ruminansia</option>
                         <option value="rph-babi">RPH Babi</option>
@@ -567,11 +528,7 @@ export default function RegistrationDetailModal({
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1 text-gray-300">Jenis Produk</label>
-                      <select
-                        value={formData.product_type || ''}
-                        onChange={(e) => setFormData({...formData, product_type: e.target.value})}
-                        className="w-full rounded-md border border-gray-600 px-3 py-2 bg-gray-800 text-white"
-                      >
+                      <select value={formData.product_type || ''} onChange={(e) => setFormData({ ...formData, product_type: e.target.value })} className="w-full rounded-md border border-gray-600 px-3 py-2 bg-gray-800 text-white">
                         <option value="">Pilih jenis produk</option>
                         <option value="daging-sapi">Daging Sapi</option>
                         <option value="daging-kambing">Daging Kambing</option>
@@ -579,12 +536,7 @@ export default function RegistrationDetailModal({
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1 text-gray-300">Deskripsi Produk</label>
-                      <Textarea
-                        value={formData.product_description || ''}
-                        onChange={(e) => setFormData({...formData, product_description: e.target.value})}
-                        rows={3}
-                        className="bg-gray-800 border-gray-600 text-white"
-                      />
+                      <Textarea value={formData.product_description || ''} onChange={(e) => setFormData({ ...formData, product_description: e.target.value })} rows={3} className="bg-gray-800 border-gray-600 text-white" />
                     </div>
                   </>
                 )}
@@ -592,48 +544,27 @@ export default function RegistrationDetailModal({
                   <>
                     <div>
                       <label className="block text-sm font-medium mb-1 text-gray-300">Nama Lengkap</label>
-                      <Input
-                        value={formData.full_name || ''}
-                        onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-                        required
-                        className="bg-gray-800 border-gray-600 text-white"
-                      />
+                      <Input value={formData.full_name || ''} onChange={(e) => setFormData({ ...formData, full_name: e.target.value })} required className="bg-gray-800 border-gray-600 text-white" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1 text-gray-300">Telepon</label>
-                      <Input
-                        value={formData.phone || ''}
-                        onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                        className="bg-gray-800 border-gray-600 text-white"
-                      />
+                      <Input value={formData.phone || ''} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="bg-gray-800 border-gray-600 text-white" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1 text-gray-300">Email</label>
-                      <Input
-                        value={formData.email || ''}
-                        onChange={(e) => setFormData({...formData, email: e.target.value})}
-                        type="email"
-                        required
-                        className="bg-gray-800 border-gray-600 text-white"
-                      />
+                      <Input value={formData.email || ''} onChange={(e) => setFormData({ ...formData, email: e.target.value })} type="email" required className="bg-gray-800 border-gray-600 text-white" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1 text-gray-300">Alamat Klinik</label>
-                      <Textarea
-                        value={formData.clinic_address || ''}
-                        onChange={(e) => setFormData({...formData, clinic_address: e.target.value})}
-                        required
-                        rows={3}
-                        className="bg-gray-800 border-gray-600 text-white"
-                      />
+                      <Textarea value={formData.clinic_address || ''} onChange={(e) => setFormData({ ...formData, clinic_address: e.target.value })} required rows={3} className="bg-gray-800 border-gray-600 text-white" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1 text-gray-300">NIB</label>
-                      <Input
-                        value={formData.nib_number || ''}
-                        onChange={(e) => setFormData({...formData, nib_number: e.target.value})}
-                        className="bg-gray-800 border-gray-600 text-white"
-                      />
+                      <Input value={formData.nib_number || ''} onChange={(e) => setFormData({ ...formData, nib_number: e.target.value })} className="bg-gray-800 border-gray-600 text-white" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1 text-gray-300">STRV</label>
+                      <Input value={formData.strv_number || ''} onChange={(e) => setFormData({ ...formData, strv_number: e.target.value })} className="bg-gray-800 border-gray-600 text-white" />
                     </div>
                   </>
                 )}
@@ -644,115 +575,82 @@ export default function RegistrationDetailModal({
             <div>
               <h3 className="font-medium text-blue-300 mb-2">Lihat Rekomendasi dan Dokumen yang Diunggah:</h3>
               <div className="text-sm text-gray-400">
-                {registration.type === 'NKV'
-                  ? (registration.recommendation_file_url
-                    ? <a href={registration.recommendation_file_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline hover:text-blue-300">
-                        Lihat Rekomendasi
-                      </a>
-                    : 'Belum ada dokumen yang diunggah')
-                  : (registration.color_photo_url || registration.diploma_url || registration.competency_cert_url || registration.professional_recommendation_url
-                    ? <div className="space-y-1">
-                        {registration.color_photo_url && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-gray-400">Pas Photo: </span>
-                            <a href={registration.color_photo_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline hover:text-blue-300">
-                              Lihat Dokumen
-                            </a>
-                          </div>
-                        )}
-                        {registration.diploma_url && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-gray-400">Diploma: </span>
-                            <a href={registration.diploma_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline hover:text-blue-300">
-                              Lihat Dokumen
-                            </a>
-                          </div>
-                        )}
-                        {registration.competency_cert_url && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-gray-400">Sertifikat Kompetensi: </span>
-                            <a href={registration.competency_cert_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline hover:text-blue-300">
-                              Lihat Dokumen
-                            </a>
-                          </div>
-                        )}
-                        {registration.professional_recommendation_url && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-gray-400">Rekomendasi Profesional: </span>
-                            <a href={registration.professional_recommendation_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline hover:text-blue-300">
-                              Lihat Dokumen
-                            </a>
-                          </div>
-                        )}
-                      </div>
-                    : 'Belum ada dokumen yang diunggah'
-                  )}
+                {registration.type === 'NKV' ? (
+                  registration.recommendation_file_url ? (
+                    <a href={registration.recommendation_file_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline hover:text-blue-300">
+                      Lihat Rekomendasi
+                    </a>
+                  ) : (
+                    <span>Belum ada dokumen yang diunggah</span>
+                  )
+                ) : null}
+                {registration.type === 'Dokter Hewan' ? (
+                  registration.color_photo_url || registration.diploma_url || registration.competency_cert_url || registration.professional_recommendation_url ? (
+                    <div className="space-y-1">
+                      {registration.color_photo_url && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-400">Pas Photo: </span>
+                          <a href={registration.color_photo_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline hover:text-blue-300">
+                            Lihat Dokumen
+                          </a>
+                        </div>
+                      )}
+                      {registration.diploma_url && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-400">Diploma: </span>
+                          <a href={registration.diploma_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline hover:text-blue-300">
+                            Lihat Dokumen
+                          </a>
+                        </div>
+                      )}
+                      {registration.competency_cert_url && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-400">Sertifikat Kompetensi: </span>
+                          <a href={registration.competency_cert_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline hover:text-blue-300">
+                            Lihat Dokumen
+                          </a>
+                        </div>
+                      )}
+                      {registration.professional_recommendation_url && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-400">Rekomendasi Profesional: </span>
+                          <a href={registration.professional_recommendation_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline hover:text-blue-300">
+                            Lihat Dokumen
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <span>Belum ada dokumen yang diunggah</span>
+                  )
+                ) : null}
+                {registration.type === 'Veterinary' ? (
+                  registration.recommendation_file_url ? (
+                    <a href={registration.recommendation_file_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline hover:text-blue-300">
+                      Lihat Rekomendasi
+                    </a>
+                  ) : (
+                    <span>Belum ada dokumen yang diunggah</span>
+                  )
+                ) : null}
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Footer Actions */}
-        <div className="p-6 bg-gray-800 border-t border-gray-700 flex flex-wrap gap-2 justify-end">
-          <Button variant="outline" onClick={handleClose} className="border-gray-600 text-gray-300 hover:bg-gray-700">
-            Tutup
-          </Button>
-
-          {!isEditing && canEdit && (
-            <Button
-              variant="secondary"
-              onClick={handleEdit}
-              className="bg-blue-600 hover:bg-blue-700 text-white border-blue-500"
-            >
-              Edit Permohonan
-            </Button>
-          )}
-
-          {!isEditing && canDelete && (
-            <Button
-              variant="destructive"
-              onClick={() => setShowDeleteConfirm(true)}
-            >
-              Hapus Permohonan
-            </Button>
-          )}
-
-          {!isEditing && canResubmit && onResubmit && (
-            <Button
-              variant="default"
-              onClick={() => setShowResubmitConfirm(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              Ajukan Ulang
-            </Button>
-          )}
-
-          {!canEdit && !canResubmit && !isEditing && (
-            <span className="text-sm text-gray-500 flex items-center py-2">
-              Permohonan dalam status &quot;{getStatusLabel(registration.status)}&quot; tidak dapat diedit
-            </span>
-          )}
-
-          {isEditing && (
-            <>
-              <Button
-                variant="default"
-                onClick={handleSave}
-                disabled={loading}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setIsEditing(false)}
-                disabled={loading}
-                className="border-gray-600 text-gray-300 hover:bg-gray-700"
-              >
-                Batal
-              </Button>
-            </>
-          )}
+          {/* Footer Actions */}
+          <div className="p-6 bg-gray-800 border-t border-gray-700 flex flex-wrap gap-2 justify-end">
+            <Button variant="outline" onClick={handleClose} className="border-gray-600 text-gray-300 hover:bg-gray-700">Tutup</Button>
+            {!isEditing && canEdit && <Button variant="secondary" onClick={handleEdit} className="bg-blue-600 hover:bg-blue-700 text-white border-blue-500">Edit Permohonan</Button>}
+            {!isEditing && canDelete && <Button variant="destructive" onClick={() => setShowDeleteConfirm(true)}>Hapus Permohonan</Button>}
+            {!isEditing && canResubmit && onResubmit && <Button variant="default" onClick={() => setShowResubmitConfirm(true)} className="bg-blue-600 hover:bg-blue-700 text-white">Ajukan Ulang</Button>}
+            {!canEdit && !canResubmit && !isEditing && <span className="text-sm text-gray-500 flex items-center py-2">Permohonan dalam status "{getStatusLabel(registration.status)}" tidak dapat diedit</span>}
+            {isEditing && (
+              <>
+                <Button variant="default" onClick={handleSave} disabled={loading} className="bg-green-600 hover:bg-green-700">{loading ? 'Menyimpan...' : 'Simpan Perubahan'}</Button>
+                <Button variant="outline" onClick={() => setIsEditing(false)} disabled={loading} className="border-gray-600 text-gray-300 hover:bg-gray-700">Batal</Button>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
