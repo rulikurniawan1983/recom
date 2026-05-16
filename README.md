@@ -1,8 +1,8 @@
-# Sistem Rekomendasi Online
+# SLIDER-VETSYS
 
 Ruli Kurniawan, S.)t
 
-Sistem rekomendasi online untuk verifikasi dan penilaian dokumen, dengan alur kerja lengkap dari pengajuan permohonan hingga penerbitan rekomendasi.
+Sistem manajemen kesehatan hewan peliharaan yang mencakup layanan vaksinasi, pengobatan, dan konsultasi, dengan alur kerja lengkap dari pendaftaran hewan hingga pengelolaan riwayat kesehatan dan layanan yang diterima.
 
 ---
 
@@ -25,32 +25,59 @@ Sistem rekomendasi online untuk verifikasi dan penilaian dokumen, dengan alur ke
 
 ## Ikhtisar
 
-Platform ini mengotomatisasi proses rekomendasi untuk layanan tertentu (misalnya: pengobatan hewan, nursing, atau sejenisnya). Pemohon mengajukan permohonan online, mengunggah dokumen required, dan admin memverifikasi dokumen, menjadwalkan pemeriksaan lapangan, serta memberikan penilaian akhir yang diterbitkan sebagai PDF.
+SLIDER-VETSYS adalah sistem manajemen kesehatan hewan peliharaan yang setelah login atau registrasi, pengguna diarahkan ke dashboard pengguna tempat mereka dapat memilih layanan: Pelayanan Kesehatan Hewan, Rekomendasi Nomor Kontrol Veteriner, dan Rekomendasi Praktek Dokter Hewan. Pada dashboard pengguna, pemohon bisa mengisi detail hewan yang sehat untuk divaksinasi atau detail hewan sakit yang akan diobati oleh dokter hewan, serta mengajukan konsultasi terkait kesehatan hewan. Pada dashboard admin, admin dapat menangani permohonan vaksinasi, pengobatan, dan konsultasi yang diminta oleh pengguna/pemohon.
 
 ---
 
 ## Fitur
 
-### 🔐 Auth & User Management
-- Registrasi pemohon (NKV & Dokter Hewan)
-- Login/Logout dengan Supabase Auth
-- Role-based access: `user`, `admin`
-- Admin dapat mengelola pengguna (tambah/hapus)
+### 🐾 Sistem Manajemen Hewan Peliharaan Komprehensif
+- **Pengolahan Data Hewan Lengkap**: Input danedit data hewan peliharaan termasuk nama, spesies, breed, umur, berat, warna, dan ciri khas
+- **Riwayat Kesehatan Terintegrasi**: Catatan kesehatan hewan yang dapat diakses dan diperbarui kapan saja
+- **Galeri Dokumentasi**: Sistem upload dan management foto/fitur khusus hewan untuk referensi medis
+- **Status Aktif/Non-aktif**: Kemudahan mengarsipkan data hewan yang tidak lagi aktif tanpa menghapus riwayat lengkap
 
-### 📄 Aplikasi & Dokumen
-- Pembuatan permohonan baru dengan upload dokumen
-- Dukungan 2 jenis layanan: **NKV** dan **Dokter Hewan**
-- Tracking status permohonan real-time
-- Upload multiple dokumen dengan tipe tertentu
+### 📊 Pelacakan Riwayat Kesehatan dan Layanan Hewan
+- **Tracking Vaksinasi**: Riwayat lengkap vaksinasi dengan tanggal, jenis vaksin, status, dan QR code verifikasi
+- **Riwayat Pengobatan**: Dokumentasi detail pengobatan termasuk deskripsi, obat yang diberikan, dan status penyembuhan
+- **Jadwal Konsultasi**: Manajemen janji konsultasi dengan dokter hewan termasuk jenis konsultasi, tanggal, dan catatan hasil
+- **Status Layanan Real-time**: Visualisasi status setiap layanan (pending, scheduled, completed) dengan indikator warna yang jelas
 
-### 👨‍💼 Admin Dashboard
-- **Dashboard ringkasan**: total permohonan, grafik tren
-- **Daftar permohonan**: tabel lengkap dengan filter & pencarian
-- **Verifikasi dokumen**: approved/rejected/revision request per-dokumen
-- **Jadwal pemeriksaan lapangan**: input tanggal, waktu, lokasi
-- **Input penilaian**: skor 0-100, catatan, upload PDF rekomendasi
-- **Pratinjau dokumen**: preview langsung (PDF/image) tanpa keluar dari modal
-- **Status workflow otomatis**: state transitions based on actions
+### 🏥 Dashboard Pengguna
+
+Setelah login, pengguna akan diarahkan ke dashboard pengguna yang telah diorganisir ulang untuk memberikan pengalaman yang lebih intuitif:
+
+### Navigasi Sidebar yang Disederhanakan
+- **Dashboard** - Halaman utama dengan layanan utama
+- **Manajemen Profil** - Mengedit informasi pribadi dan akun
+- **Pengaturan Akun** - Mengatur preferensi notifikasi dan bahasa
+
+### Tiga Layanan Utama di Halaman Utama
+Dashboard menampilkan tiga pilihan layanan utama dalam format kartu yang jelas:
+
+1. **Pelayanan Kesehatan Hewan**
+   - Vaksinasi hewan sehat
+   - Pengobatan hewan sakit  
+   - Konsultasi kesehatan hewan
+
+2. **Nomor Kontrol Veteriner (NKV)**
+   - Pengajuan permohonan NKV baru
+   - Pengembangan usaha bidang kesehatan hewan
+   - Pembaruan dan perpanjangan NKV
+
+3. **Rekomendasi Praktek Dokter Hewan**
+   - Untuk dokter hewan yang membuka praktik baru
+   - Mengubah lokasi praktik
+   - Memperpanjang izin praktik
+
+Setiap kartu layanan memberikan deskripsi singkat dan mengarahkan pengguna langsung ke formulir pendaftaran yang sesuai ketika diklik.
+
+### Statistik dan Filter
+Di bawah layanan utama, pengguna masih dapat melihat:
+- Statistik permohonan (total, draft, diproses, disetujui)
+- Filter pencarian berdasarkan nomor registrasi, nama usaha, atau nama lengkap
+- Filter berdasarkan status dan jenis layanan
+- Tabel riwayat permohonan dengan opsi detail, edit, hapus, dan ajukan ulang
 
 ---
 
@@ -305,94 +332,249 @@ Buka [http://localhost:3000](http://localhost:3000)
 
 ## Alur Kerja Admin
 
-### 1. Login ke Dashboard
+### 1. Login ke Dashboard Admin
 - Kunjungi `/admin` atau klik "Admin Panel" dari menu
 - Login dengan akun yang memiliki role `admin`
 
-### 2. Verifikasi Dokumen
-**Status awal:** `submitted` → admin melihat daftar permohonan
+### 2. Dashboard Admin
+- Setelah login, admin akan melihat dashboard dengan tampilan ringkasan permohonan yang masuk
+- Terdapat tiga jenis layanan yang dapat dikelola:
+  1. **Pelayanan Kesehatan Hewan (Vaksinasi)** - untuk hewan sehat yang akan divaksinasi
+  2. **Rekomendasi Nomor Kontrol Veteriner** - untuk pendaftaran dan verifikasi NKV
+  3. **Rekomendasi Praktek Dokter Hewan** - untuk verifikasi dan rekomendasi praktek dokter hewan
+- Admin dapat menyaring permohonan berdasarkan jenis layanan, status, dan rentang tanggal
 
-**Cara verifikasi:**
-- Klik **"Verifikasi Dokumen"** pada baris permohonan → modal **Detail Permohonan** terbuka
-- Tab **Dokumen** menampilkan semua file yang diupload
-- Admin bisa:
-  - Klik kartu dokumen untuk **preview** (PDF/image langsung ditampilkan)
-  - Klik **Setujui** → status dokumen `approved`
-  - Klik **Revisi** → status `revision_requested` (catatan opsional)
-  - Klik **Tolak** → status `rejected` (catatan wajib)
-- Setelah semua dokumen NKV disetujui, banner hijau muncul: *"Semua dokumen telah diverifikasi. Siap untuk menjadwalkan pemeriksaan lapangan."*
+### 3. Menangani Permohonan Vaksinasi (Hewan Sehat)
+**Status awal:** `draft` → setelah pengguna mengisi detail hewan sehat dan mengajukan permohonan vaksinasi, status menjadi `submitted_vaksinasi`
+- Admin melihat daftar permohonan vaksinasi yang statusnya `submitted_vaksinasi`
+- Untuk setiap permohonan, admin dapat:
+  - Melihat detail hewan yang akan divaksinasi (nama, spesies, breed, umur, berat, warna, ciri khas)
+  - Memeriksa riwayat kesehatan dan vaksinasi sebelumnya
+  - Memverifikasi kebenaran data hewan yang diberikan pengguna
+  - Menyetujui permohonan vaksinasi → status menjadi `approved_vaksinasi`
+  - Menolak permohonan vaksinasi dengan memberikan alasan → status menjadi `rejected_vaksinasi`
+  - Meminta revisi data hewan → status menjadi `revision_vaksinasi` (opsional)
+- Setelah disetujui, sistem otomatis menghasilkan jadwal vaksinasi berdasarkan kebijakan klinik dan memberitahukan pengguna
 
-**Catatan:** Hanya dokumen untuk layanan **NKV** yang diverifikasi satu per satu. Untuk **Dokter Hewan**, verifikasi dilakukan secara keseluruhan pada permutation.
+### 4. Menangani Permohonan Pengobatan (Hewan Sakit)
+**Status awal:** `draft` → setelah pengguna mengisi detail hewan sakit dan mengajukan permohonan pengobatan, status menjadi `submitted_pengobatan`
+- Admin melihat daftar permohonan pengobatan yang statusnya `submitted_pengobatan`
+- Untuk setiap permohonan, admin dapat:
+  - Melihat detail hewan sakit dan gejala yang dilaporkan pengguna
+  - Menetapkan dokter hewan yang akan menangani kasus berdasarkan spesialisasi
+  - Menjadwalkan konsultasi awal untuk diagnosis
+  - Menyetujui permohonan pengobatan → status menjadi `approved_pengobatan`
+  - Menolak permohonan pengobatan dengan memberikan alasan → status menjadi `rejected_pengobatan`
+  - Meminta informasi tambahan atau hasil pemeriksaan awal → status menjadi `revision_pengobatan` (opsional)
+- Setelah disetujui, pengguna dapat melanjutkan ke tahap pengobatan sesuai jadwal yang telah ditetapkan dengan dokter yang ditugaskan
 
-### 3. Jadwalkan Pemeriksaan Lapangan
-**Ketika semua dokumen NKV disetujui:**
-- Tombol **"Jadwalkan Pemeriksaan Lapangan"** muncul di footer modal (atau dari dropdown di tabel)
-- Isi form:
-  - Tanggal & Waktu
-  - Lokasi pemeriksaan
-  - Catatan (opsional)
-- Klik **Jadwalkan** → status permutation menjadi `field_inspection`
-- Notifikasi berhasil muncul
+### 5. Menangani Permohonan Konsultasi Kesehatan Hewan
+**Status awal:** `draft` → setelah pengguna mengajukan permohonan konsultasi terkait kesehatan hewan, status menjadi `submitted_konsultasi`
+- Admin melihat daftar permohonan konsultasi yang statusnya `submitted_konsultasi`
+- Untuk setiap permohonan, admin dapat:
+  - Melihat jenis konsultasi yang diminta (misalnya: konsultasi gizi, konsultasi perilaku, konsultasi pasca-operasi, konsultasi umum)
+  - Menetapkan dokter hewan spesialis sesuai jenis konsultasi yang diminta
+  - Menjadwalkan waktu konsultasi berdasarkan ketersediaan dokter dan klinik
+  - Menyetujui permohonan konsultasi → status menjadi `approved_konsultasi`
+  - Menolak permohonan konsultasi dengan memberikan alasan → status menjadi `rejected_konsultasi`
+  - Meminta klarifikasi topik konsultasi atau informasi tambahan → status menjadi `revision_konsultasi` (opsional)
+- Setelah disetujui, sistem akan mengirimkan konfirmasi jadwal konsultasi kepada pengguna termasuk dokter yang ditugaskan, tanggal, waktu, dan lokasi konsultasi
 
-### 4. Input Penilaian
-**Setelah pemeriksaan lapangan selesai:**
-- Klik **"Input Penilaian"** pada baris permutation (status `field_inspection` atau `assessment`)
-- Masukkan:
-  - **Skor (0–100)** – minimal 75 untuk disetujui
-  - **Catatan Penilaian** (wajib) – detail temuan, rekomendasi
-  - **URL File Rekomendasi** (opsional) – link ke PDF hasil penilaian yang di-upload manual
-- Klik **Simpan Penilaian**:
-  - Jika skor ≥ 75 → status menjadi `approved`
-  - Jika skor < 75 → status menjadi `rejected`
-- Sistem menampilkan notifikasi hasil
+### 6. Menangani Permohonan Rekomendasi Nomor Kontrol Veteriner (NKV)
+**Status awal:** `draft` → setelah pengguna mengajukan permohonan NKV dan mengunggah dokumen yang diperlukan, status menjadi `submitted_nkv`
+- Admin melihat daftar permohonan NKV yang statusnya `submitted_nkv`
+- Untuk setiap permohonan, admin dapat:
+  - Melihat data pemohon dan perusahaan/instansi
+  - Memverifikasi dokumen yang diupload (SIUP, TDP, surat permohonan, dll.)
+  - Menyetujui permohonan NKV → status menjadi `approved_nkv` dan sistem menghasilkan nomor kontrol veteriner
+  - Menolak permohonan NKV dengan memberikan alasan → status menjadi `rejected_nkv`
+  - Meminta revisi dokumen → status menjadi `revision_nkv` (opsional)
+- Sistem mencatat nomor kontrol veteriner yang telah diberikan untuk referensi di masa depan
 
-### 5. (Opsional) Minta Revisi / Tolak
-- Tombol **"Minta Revisi"** tersedia untuk permohonan non-final (kecuali draft)
-- Tombol **"Tolak"** tersedia untuk permohonan non-final & non-draft
-- Keduanya membutuhkan catatan admin (wajib untuk tolak)
+### 7. Menangani Permohonan Rekomendasi Praktek Dokter Hewan
+**Status awal:** `draft` → setelah dokter hewan mengajukan permohonan praktek dan mengunggah dokumen yang diperlukan, status menjadi `submitted_praktik`
+- Admin melihat daftar permohonan praktek dokter hewan yang statusnya `submitted_praktik`
+- Untuk setiap permohonan, admin dapat:
+  - Melihat data dokter hewan (nama, nomor STR, spesialisasi, tempat praktik)
+  - Memverifikasi dokumen yang diupload (Sertifikat Str, SIP, surat izin praktik, dll.)
+  - Menyetujui permohonan praktek → status menjadi `approved_praktik` dan sistem memberikan rekomendasi praktek
+  - Menolak permohonan praktek dengan memberikan alasan → status menjadi `rejected_praktik`
+  - Meminta revisi dokumen → status menjadi `revision_praktik` (opsional)
+- Sistem mencatat dokter hewan yang telah mendapatkan rekomendasi praktek untuk referensi verifikasi secara berkala
 
-### 6. Lihat Dokumen
-- Klik **"Lihat Detail"** untuk membuka modal dengan tab:
-  - **Dokumen**: list dokumen + aksi verifikasi
-  - **Informasi**: data pemohon & permutation
-  - **Riwayat**: (akan segera tersedia)
+### 8. Monitoring dan Laporan
+- Admin dapat melihat laporan harian, mingguan, atau bulanan mengenai jumlah permohonan yang disetujui, ditolak, dan dalam proses untuk setiap jenis layanan
+- Terdapat grafik distribusi jenis layanan yang paling sering diminta dan tren permohonan dari waktu ke waktu
+- Admin dapat mengekspor data dalam format CSV atau PDF untuk keperluan administrasi dan audit
+- Sistem memberikan notifikasi kepada admin apabila ada permohonan yang telah menunggu lebih dari batas waktu yang ditentukan
 
 ---
 
 ## Alur Kerja Pemohon
 
 ### 1. Registrasi & Login
-- Kunjungi halaman registrasi: `/nkv/register` (untuk NKV) atau `/dokter-hewan/register` (untuk Dokter Hewan)
-- Isi form lengkap dengan data pribadi & perusahaan
+- Kunjungi halaman registrasi sesuai jenis layanan yang diinginkan:
+  - `/nkv/register` untuk Nomor Kontrol Veteriner
+  - `/dokter-hewan/register` untuk Rekomendasi Praktek Dokter Hewan
+  - Atau langsung login jika sudah memiliki akun
+- Isi form lengkap dengan data pribadi & perusahaan (jika適用)
 - Setelah registrasi, login di `/login`
 
-### 2. Ajukan Permohonan Baru
-- Klik **"Ajukan Permohonan Baru"** di dashboard user
-- Pilih jenis layanan (NKV / Dokter Hewan)
-- Upload dokumen required (berdasarkan jenis):
-  - **Contoh NKV**: Surat Permohonan, SIUP, TDP, etc.
-  - **Contoh Dokter Hewan**: Izin Praktek, Sertifikat, dll.
-- Klik **"Kirim Permohonan"** → status menjadi `submitted`
+### 2. Dashboard Pengguna
+- Setelah login, pengguna akan diarahkan ke dashboard pengguna
+- Pada dashboard pengguna, terdapat tiga pilihan layanan utama:
+  1. **Pelayanan Kesehatan Hewan** - untuk vaksinasi hewan sehat atau pengobatan hewan sakit
+  2. **Rekomendasi Nomor Kontrol Veteriner (NKV)** - untuk pendaftaran dan verifikasi NKV
+  3. **Rekomendasi Praktek Dokter Hewan** - untuk verifikasi dan rekomendasi praktek dokter hewan
+- Pengguna dapat memilih layanan yang sesuai dengan kebutuhan
 
-### 3. Lacak Status Permohonan
-- Di dashboard user, lihat daftar permohonan beserta status
-- Status yang mungkin:
-  - `submitted` – menunggu verifikasi dokumen
-  - `document_verification` – dokumen diverifikasi, menunggu jadwal
-  - `field_inspection` – pemeriksaan lapangan dijadwalkan
-  - `assessment` – sedang dinilai
-  - `approved` – disetujui
-  - `rejected` – ditolak
-  - `revision_requested` – diminta revisi
+### 3. Mengajukan Permohonan Baru
+- Klik **"Ajukan Permohonan Baru"** di dashboard pengguna
+- Pilih jenis layanan yang diinginkan:
+  - **Pelayanan Kesehatan Hewan** (untuk vaksinasi atau pengobatan)
+  - **Rekomendasi Nomor Kontrol Veteriner**
+  - **Rekomendasi Praktek Dokter Hewan**
+- Berdasarkan jenis layanan yang dipilih, pengguna akan diminta mengisi formulir yang sesuai
 
-### 4. Revisi Dokumen (jika diminta)
-- Jika admin meminta revisi, klik **"Revisi"** pada permohonan
-- Upload dokumen revisi dengan catatan admin
-- Admin akan diverifikasi kembali
+### 4. Untuk Layanan Pelayanan Kesehatan Hewan
+#### A. Vaksinasi Hewan Sehat
+- Pilih oonika "Vaksinasi Hewan Sehat"
+- Isi detail hewan yang akan divaksinasi:
+  - Nama hewan
+  - Spesies (Anjing, Kucing, Sapi, dll.)
+  - Breed/Ras
+  - Umur (tahun dan bulan)
+  - Jenis kelamin (Jantan/Betina)
+  - Berat (kg)
+  - Warna bulu
+  - Ciri khas khusus
+  - Riwayat kesehatan (opsional)
+- Pilih jenis vaksinasi yang diinginkan berdasarkan rekomendasi dokter hewan atau jadwal standar
+- Unggah dokumentasi pendukung jika diperlukan (Kartu vaksinasi sebelumnya, dll.)
+- Klik **"Kirim Permohonan Vaksinasi"** → status menjadi `submitted_vaksinasi`
 
-### 5. Download Hasil
-- Jika disetujui, cek email atau dashboard untuk link PDF rekomendasi
-- Download dan gunakan sesuai kebutuhan
+#### B. Pengobatan Hewan Sakit
+- Pilih oonika "Pengobatan Hewan Sakit"
+- Isi detail hewan yang sakit:
+  - Nama hewan
+  - Spesies
+  - Breed/Ras
+  - Umur
+  - Jenis kelamin
+  - Berat
+  - Warna bulu
+  - Ciri khas
+- Jelaskan gejala yang dialami hewan:
+  - Gejala utama yang terlihat
+  - Durasi gejala
+  - Perubahan perilaku atau pola makan
+  - Riwayat penyakit sebelumnya (jika ada)
+  - Pengobatan yang telah diberikan (jika ada)
+- Unggah dokumentasi pendukung jika diperlukan (foto, video, hasil pemeriksaan sebelumnya)
+- Klik **"Kirim Permohonan Pengobatan"** → status menjadi `submitted_pengobatan`
+
+### 5. Untuk Layanan Rekomendasi Nomor Kontrol Veteriner (NKV)
+- Pilih oonika "Rekomendasi Nomor Kontrol Veteriner"
+- Isi data pemohon:
+  - Nama lengkap
+  - Nama perusahaan/instansi
+  - Alamat lengkap
+  - Nomor telepon
+  - Email
+- Unggah dokumen yang diperlukan:
+  - Surat permohonan NKV
+  - SIUP (Surat Izin Usaha Perdagangan)
+  - TDP (Tanda Daftar Perusahaan)
+  - Dokumen pendukung lain sesuai ketentuan
+- Klik **"Kirim Permohonan NKV"** → status menjadi `submitted_nkv`
+
+### 6. Untuk Layanan Rekomendasi Praktek Dokter Hewan
+- Pilih oonika "Rekomendasi Praktek Dokter Hewan"
+- Isi data dokter hewan:
+  - Nama lengkap
+  - Nomor STR (Surat Tanda Registrasi)
+  - Spesialisasi (Jika ada)
+  - Alamat praktik
+  - Nomor telepon praktik
+  - Email praktik
+- Unggah dokumen yang diperlukan:
+  - Fotokopi STR yang masih berlaku
+  - Sertifikat pendidikan dokter hewan
+  - Surat izin praktik dari dinas pertanian atau peternakan
+  - Surat keterangan bebas narkotika dan psikotropika
+  - Dokumen pendukung lain sesuai ketentuan
+- Klik **"Kirim Permohonan Praktek"** → status menjadi `submitted_praktik`
+
+### 7. Mengajukan Konsultasi Kesehatan Hewan
+- Dari dashboard pengguna, pilih layanan "Pelayanan Kesehatan Hewan"
+- Pilih oonika "Konsultasi Kesehatan Hewan"
+- Isi formulir konsultasi:
+  - Pilih hewan yang ingin dikonsultasi dari daftar hewan terdaftar (atau tambah hewan baru jika belum terdaftar)
+  - Jenis konsultasi yang diminta:
+    - Konsultasi umum kesehatan hewan
+    - Konsultasi gizi dan diet
+    - Konsultasi perilaku dan latihan
+    - Konsultasi pasca-operasi atau pasca-treatment
+    - Konsultasi reproduksi dan keturunan
+    - Konsultasi spesies khusus (konsultasi hewan eksotik, dll.)
+  - Topik atau pertanyaan spesifik yang ingin dibahas
+  - Riwayat kesehatan hewan terkait topik konsultasi
+  - Gejala atau kondisi saat ini yang menjadi pertimbangan konsultasi
+- Unggah dokumentasi pendukung jika diperlukan (foto, video, hasil pemeriksaan terkait)
+- Pilih preferred waktu konsultasi (opsional, untuk pertimbangan jadwal)
+- Klik **"Kirim Permohonan Konsultasi"** → status menjadi `submitted_konsultasi`
+
+### 8. Lacak Status Permohonan
+- Di dashboard pengguna, lihat daftar permohonan beserta statusnya untuk setiap jenis layanan
+- Status yang mungkin tergantung jenis layanan:
+  - **Untuk Vaksinasi Hewan Sehat**:
+    - `submitted_vaksinasi` – menunggu verifikasi admin
+    - `approved_vaksinasi` – disetujui, menunggu jadwal vaksinasi
+    - `scheduled_vaksinasi` – jadwal vaksinasi telah ditetapkan
+    - `completed_vaksinasi` – vaksinasi telah dilakukan
+    - `rejected_vaksinasi` – ditolak dengan alasan
+    - `revision_vaksinasi` – diminta revisi data hewan
+  - **Untuk Pengobatan Hewan Sakit**:
+    - `submitted_pengobatan` – menunggu verifikasi admin
+    - `approved_pengobatan` – disetujui, menunggu penjadwalan konsultasi awal
+    - `scheduled_konsultasi_diagnosa` – jadwal konsultasi diagnosis telah ditetapkan
+    - `under_treatment` – sedang dalam proses pengobatan
+    - `completed_pengobatan` – pengobatan selesai, hewan sembuh
+    - `rejected_pengobatan` – ditolak dengan alasan
+    - `revision_pengobatan` – diminta informasi tambahan
+  - **Untuk Konsultasi Kesehatan Hewan**:
+    - `submitted_konsultasi` – menunggu verifikasi admin
+    - `approved_konsultasi` – disetujui, menunggu penjadwalan
+    - `scheduled_konsultasi` – jadwal konsultasi telah ditetapkan
+    - `completed_konsultasi` – konsultasi telah dilakukan
+    - `rejected_konsultasi` – ditolak dengan alasan
+    - `revision_konsultasi` – diminta klarifikasi topik konsultasi
+  - **Untuk NKV**:
+    - `submitted_nkv` – menunggu verifikasi dokumen
+    - `approved_nkv` – disetujui, nomor kontrol veteriner telah diberikan
+    - `rejected_nkv` – ditolak dengan alasan
+    - `revision_nkv` – diminta revisi dokumen
+  - **Untuk Praktek Dokter Hewan**:
+    - `submitted_praktik` – menunggu verifikasi dokumen
+    - `approved_praktik` – disetujui, rekomendasi praktek telah diberikan
+    - `rejected_praktik` – ditolak dengan alasan
+    - `revision_praktik` – diminta revisi dokumen
+
+### 9. Revisi Permohonan (jika diminta)
+- Jika admin meminta revisi, pengguna akan mendapat notifikasi
+- Klik notifikasi atau lihat permohonan yang statusnya menunjukkan perlu revisi
+- Upload dokumen revisi atau perbaiki data sesuai catatan admin
+- Klik **"Kirim Revisi"** → admin akan memverifikasi kembali
+
+### 10. Download Hasil dan Bukti Layanan
+- Jika permohonan disetujui dan layanan telah dilakukan:
+  - Untuk vaksinasi: sertifikat vaksinasi dapat diunduh dari dashboard
+  - Untuk pengobatan: ringkasan hasil pengobatan dan surat keterangan sembuh dapat diunduh
+  - Untuk konsultasi: catatan konsultasi dan rekomendasi dapat diunduh
+  - Untuk NKV: sertifikat nomor kontrol veteriner dapat diunduh
+  - Untuk Praktek Dokter Hewan: surat rekomendasi praktek dapat diunduh
+- Cek email atau dashboard untuk notifikasi ketersediaan dokumen
+- Download dan gunakan sesuai kebutuhan (administrasi, perjalanan, referensi, dll.)
 
 ---
 
@@ -500,16 +682,59 @@ Buka [http://localhost:3000](http://localhost:3000)
 
 ### Registrations.status
 
+SLIDER-VETSYS menggunakan status yang spesifik untuk setiap jenis layanan. Berikut adalah kode status yang digunakan:
+
+#### Untuk Layanan Vaksinasi Hewan Sehat
 | Kode | Label | Deskripsi |
 |------|-------|-----------|
-| `draft` | Draft | Permohonan masih dalam kantong (belum dikirim) |
-| `submitted` | Submitted | Dokumen diajukan, menunggu verifikasi awal |
-| `document_verification` | Document Verification | Dokumen diverifikasi, menunggu jadwal |
-| `field_inspection` | Pemeriksaan Lapangan | Sudah dijadwalkan, menunggu pelaksanaan |
-| `assessment` | Assessment | Pemeriksaan selesai, menunggu penilaian |
-| `approved` | Approved | Permohonan diterima |
-| `rejected` | Rejected | Permohonan ditolak |
-| `revision_requested` | Revision Requested | Diminta revisi dokumen |
+| `submitted_vaksinasi` | Submitted Vaksinasi | Permohonan vaksinasi diajukan, menunggu verifikasi admin |
+| `approved_vaksinasi` | Approved Vaksinasi | Permohonan vaksinasi disetujui, menunggu jadwal vaksinasi |
+| `scheduled_vaksinasi` | Scheduled Vaksinasi | Jadwal vaksinasi telah ditetapkan |
+| `completed_vaksinasi` | Completed Vaksinasi | Vaksinasi telah dilakukan |
+| `rejected_vaksinasi` | Rejected Vaksinasi | Permohonan vaksinasi ditolak dengan alasan |
+| `revision_vaksinasi` | Revision Vaksinasi | Diminta revisi data hewan |
+
+#### Untuk Layanan Pengobatan Hewan Sakit
+| Kode | Label | Deskripsi |
+|------|-------|-----------|
+| `submitted_pengobatan` | Submitted Pengobatan | Permohonan pengobatan diajukan, menunggu verifikasi admin |
+| `approved_pengobatan` | Approved Pengobatan | Permohonan pengobatan disetujui, menunggu penjadwalan konsultasi awal |
+| `scheduled_konsultasi_diagnosa` | Scheduled Konsultasi Diagnosa | Jadwal konsultasi diagnosis telah ditetapkan |
+| `under_treatment` | Under Treatment | Sedang dalam proses pengobatan |
+| `completed_pengobatan` | Completed Pengobatan | Pengobatan selesai, hewan sembuh |
+| `rejected_pengobatan` | Rejected Pengobatan | Permohonan pengobatan ditolak dengan alasan |
+| `revision_pengobatan` | Revision Pengobatan | Diminta informasi tambahan atau hasil pemeriksaan awal |
+
+#### Untuk Layanan Konsultasi Kesehatan Hewan
+| Kode | Label | Deskripsi |
+|------|-------|-----------|
+| `submitted_konsultasi` | Submitted Konsultasi | Permohonan konsultasi diajukan, menunggu verifikasi admin |
+| `approved_konsultasi` | Approved Konsultasi | Permohonan konsultasi disetujui, menunggu penjadwalan |
+| `scheduled_konsultasi` | Scheduled Konsultasi | Jadwal konsultasi telah ditetapkan |
+| `completed_konsultasi` | Completed Konsultasi | Konsultasi telah dilakukan |
+| `rejected_konsultasi` | Rejected Konsultasi | Permohonan konsultasi ditolak dengan alasan |
+| `revision_konsultasi` | Revision Konsultasi | Diminta klarifikasi topik konsultasi atau informasi tambahan |
+
+#### Untuk Layanan Rekomendasi Nomor Kontrol Veteriner (NKV)
+| Kode | Label | Deskripsi |
+|------|-------|-----------|
+| `submitted_nkv` | Submitted NKV | Permohonan NKV diajukan, menunggu verifikasi dokumen |
+| `approved_nkv` | Approved NKV | Permohonan NKV disetujui, nomor kontrol veteriner telah diberikan |
+| `rejected_nkv` | Rejected NKV | Permohonan NKV ditolak dengan alasan |
+| `revision_nkv` | Revision NKV | Diminta revisi dokumen |
+
+#### Untuk Layanan Rekomendasi Praktek Dokter Hewan
+| Kode | Label | Deskripsi |
+|------|-------|-----------|
+| `submitted_praktik` | Submitted Praktek | Permohonan praktek dokter hewan diajukan, menunggu verifikasi dokumen |
+| `approved_praktik` | Approved Praktek | Permohonan praktek dokter hewan disetujui, rekomendasi praktek telah diberikan |
+| `rejected_praktik` | Rejected Praktek | Permohonan praktek dokter hewan ditolak dengan alasan |
+| `revision_praktik` | Revision Praktek | Diminta revisi dokumen |
+
+#### Status Umum yang Masih Digunakan
+| Kode | Label | Deskripsi |
+|------|-------|-----------|
+| `draft` | Draft | Permohonan masih dalam bentuk draft (belum dikirim) |
 
 ### Documents.status
 
@@ -639,4 +864,4 @@ MIT License – lihat file `LICENSE` untuk detail.
 
 Untuk pertanyaan atau issues, buka ticket di GitHub repository atau hubungi admin sistem.
 
-**Sistem Rekomendasi Online** © 2026
+**SLIDER-VETSYS** © 2026

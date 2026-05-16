@@ -66,7 +66,7 @@ type AdminRegistration = {
   registration_number: string;
   status: RegistrationStatus;
   created_at: string;
-  type: 'NKV' | 'Dokter Hewan';
+  type: 'NKV' | 'Dokter Hewan' | 'Veterinary';
   applicant_name: string;
   email: string;
   phone: string;
@@ -179,32 +179,40 @@ export default function AdminPage() {
   const [deletingUser, setDeletingUser] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
 
-  // Stats calculation
-  const stats = useMemo(() => {
-    const total = registrations.length;
-    const draft = registrations.filter(r => r.status === 'draft').length;
-    const submitted = registrations.filter(r => r.status === 'submitted').length;
-    const documentVerification = registrations.filter(r => r.status === 'document_verification').length;
-    const fieldInspection = registrations.filter(r => r.status === 'field_inspection').length;
-    const assessment = registrations.filter(r => r.status === 'assessment').length;
-    const approved = registrations.filter(r => r.status === 'approved').length;
-    const rejected = registrations.filter(r => r.status === 'rejected' || r.status === 'revision_requested').length;
-    const revisionRequested = registrations.filter(r => r.status === 'revision_requested').length;
-    
-    return {
-      total,
-      draft,
-      submitted,
-      documentVerification,
-      fieldInspection,
-      assessment,
-      approved,
-      rejected,
-      revisionRequested,
-      inProgress: documentVerification + fieldInspection + assessment,
-      needsAction: submitted + documentVerification + revisionRequested
-    };
-  }, [registrations]);
+   // Stats calculation
+   const stats = useMemo(() => {
+     const total = registrations.length;
+     const draft = registrations.filter(r => r.status === 'draft').length;
+     const submitted = registrations.filter(r => r.status === 'submitted').length;
+     const documentVerification = registrations.filter(r => r.status === 'document_verification').length;
+     const fieldInspection = registrations.filter(r => r.status === 'field_inspection').length;
+     const assessment = registrations.filter(r => r.status === 'assessment').length;
+     const approved = registrations.filter(r => r.status === 'approved').length;
+     const rejected = registrations.filter(r => r.status === 'rejected' || r.status === 'revision_requested').length;
+     const revisionRequested = registrations.filter(r => r.status === 'revision_requested').length;
+     
+     // Service-specific counts
+     const veterinaryHealth = registrations.filter(r => r.type === 'NKV' || r.type === 'Dokter Hewan').length;
+     const nkvService = registrations.filter(r => r.type === 'NKV').length;
+     const practiceRecommendation = registrations.filter(r => r.type === 'Dokter Hewan').length;
+     
+     return {
+       total,
+       draft,
+       submitted,
+       documentVerification,
+       fieldInspection,
+       assessment,
+       approved,
+       rejected,
+       revisionRequested,
+       inProgress: documentVerification + fieldInspection + assessment,
+       needsAction: submitted + documentVerification + revisionRequested,
+       veterinaryHealth,
+       nkvService,
+       practiceRecommendation
+     };
+   }, [registrations]);
 
    const filteredRegistrations = useMemo(() => {
      return registrations.filter(reg => {
@@ -236,41 +244,63 @@ export default function AdminPage() {
   const [verifyNotes, setVerifyNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    // Defer state updates to avoid synchronous setState in effect
-    await new Promise(resolve => setTimeout(resolve, 0));
-    setLoading(true);
-    setError(null);
-     try {
-       const [regRes, userRes, usersRes] = await Promise.all([
-         fetch('/api/admin/applications'),
-         fetch('/api/admin/whoami'),
-         fetch('/api/admin/users')
-       ]);
+   const fetchData = useCallback(async () => {
+     // Defer state updates to avoid synchronous setState in effect
+     await new Promise(resolve => setTimeout(resolve, 0));
+     setLoading(true);
+     setError(null);
+      try {
+        const [regRes, userRes, usersRes, vetRes] = await Promise.all([
+          fetch('/api/admin/applications'),
+          fetch('/api/admin/whoami'),
+          fetch('/api/admin/users'),
+          fetch('/api/admin/veterinary-registrations')
+        ]);
 
-       if (regRes.ok) {
-         const data = await regRes.json();
-         console.log('Fetched registrations from API:', data);
-         setRegistrations(Array.isArray(data) ? data : []);
-       } else {
-         setError('Gagal memuat data permohonan');
+        let regData = [];
+        if (regRes.ok) {
+          regData = await regRes.json();
+          console.log('Fetched registrations from API:', regData);
+          setRegistrations(Array.isArray(regData) ? regData : []);
+        } else {
+          setError('Gagal memuat data permohonan');
+        }
+
+       if (userRes.ok) {
+         const userData = await userRes.json();
+         setUserEmail(userData.user?.email || 'Admin');
        }
 
-      if (userRes.ok) {
-        const data = await userRes.json();
-        setUserEmail(data.user?.email || 'Admin');
-      }
-
-      if (usersRes.ok) {
-        const data = await usersRes.json();
-        setUsers(Array.isArray(data.users) ? data.users : []);
-      }
-    } catch {
-      setError('Tidak dapat terhubung ke server');
-    } finally {
-      setLoading(false);
-    }
-  }, []); // end useCallback fetchData
+       if (usersRes.ok) {
+         const usersData = await usersRes.json();
+         setUsers(Array.isArray(usersData.users) ? usersData.users : []);
+       }
+       
+       // Process veterinary registrations data
+       if (vetRes.ok) {
+         const vetData = await vetRes.json();
+         console.log('Fetched veterinary registrations from API:', vetData);
+         
+         // Convert veterinary registrations to AdminRegistration format and merge with existing registrations
+         const vetRegistrations: AdminRegistration[] = Array.isArray(vetData) ? vetData : [];
+         const currentRegistrations = Array.isArray(regData) ? regData : [];
+         
+         // Merge and deduplicate by id
+         const allRegistrations = [...currentRegistrations];
+         vetRegistrations.forEach(vetReg => {
+           if (!allRegistrations.some(reg => reg.id === vetReg.id)) {
+             allRegistrations.push(vetReg);
+           }
+         });
+         
+         setRegistrations(allRegistrations);
+       }
+     } catch {
+       setError('Tidak dapat terhubung ke server');
+     } finally {
+       setLoading(false);
+     }
+   }, []); // end useCallback fetchData
 
   useEffect(() => {
     fetchData();
@@ -670,109 +700,106 @@ export default function AdminPage() {
              </button>
            </div>
 
-            {/* Navigation */}
-            <nav className="flex-1 px-4 py-6 space-y-1">
-              <button
-                onClick={() => setViewMode('dashboard')}
-                className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  viewMode === 'dashboard' 
-                    ? 'bg-blue-50 text-blue-700' 
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <LayoutDashboard className="h-5 w-5" />
-                Dashboard
-              </button>
-<button
-                 onClick={() => setViewMode('applications')}
-                 className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                   viewMode === 'applications'
-                     ? 'bg-blue-50 text-blue-700'
-                     : 'text-gray-700 hover:bg-gray-100'
-                 }`}
-               >
-                 <FileText className="h-5 w-5" />
-                 Semua Permohonan
-               </button>
-               <button
-                 onClick={() => setViewMode('verification')}
-                 className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                   viewMode === 'verification'
-                     ? 'bg-blue-50 text-blue-700'
-                     : 'text-gray-700 hover:bg-gray-100'
-                 }`}
-               >
-                 <ClipboardCheck className="h-5 w-5" />
-                 Verifikasi Dokter Hewan
-               </button>
-               <button
-                 onClick={() => setViewMode('users')}
-                 className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                   viewMode === 'users'
-                     ? 'bg-blue-50 text-blue-700'
-                     : 'text-gray-700 hover:bg-gray-100'
-                 }`}
-               >
-                 <Users className="h-5 w-5" />
-                 Daftar Pengguna
-               </button>
+        {/* Navigation */}
+        <nav className="flex-1 px-4 py-6 space-y-1">
+          <button
+            onClick={() => setViewMode('dashboard')}
+            className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+              viewMode === 'dashboard' 
+                ? 'bg-blue-50 text-blue-700' 
+                : 'text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            <LayoutDashboard className="h-5 w-5" />
+            Dashboard
+          </button>
+          <button
+            onClick={() => setViewMode('applications')}
+            className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+              viewMode === 'applications'
+                ? 'bg-blue-50 text-blue-700'
+                : 'text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            <FileText className="h-5 w-5" />
+            Semua Permohonan
+          </button>
+          <button
+            onClick={() => setViewMode('users')}
+            className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+              viewMode === 'users'
+                ? 'bg-blue-50 text-blue-700'
+                : 'text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            <Users className="h-5 w-5" />
+            Daftar Pengguna
+          </button>
 
-               {/* Separator */}
-               <div className="my-2 border-t border-gray-200" />
+          {/* Separator */}
+          <div className="my-2 border-t border-gray-200" />
 
-               {/* Veterinary Service Management */}
-               <p className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                 Layanan Kesehatan Hewan
-               </p>
+          {/* Veterinary Service Management */}
+          <p className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            Layanan Kesehatan Hewan
+          </p>
 
-                <button
-                  onClick={() => router.push('/admin/vaccinations')}
-                  className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    viewMode === 'vaccinations'
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  <Syringe className="h-5 w-5" />
-                  Vaksinasi
-                </button>
+           <button
+             onClick={() => router.push('/admin/vaccinations')}
+             className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+               viewMode === 'vaccinations'
+                 ? 'bg-blue-50 text-blue-700'
+                 : 'text-gray-700 hover:bg-gray-100'
+             }`}
+           >
+             <Syringe className="h-5 w-5" />
+             Vaksinasi
+           </button>
 
-                <button
-                  onClick={() => router.push('/admin/treatments')}
-                  className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    viewMode === 'treatments'
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  <Stethoscope className="h-5 w-5" />
-                  Pengobatan
-                </button>
+           <button
+             onClick={() => router.push('/admin/treatments')}
+             className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+               viewMode === 'treatments'
+                 ? 'bg-blue-50 text-blue-700'
+                 : 'text-gray-700 hover:bg-gray-100'
+             }`}
+           >
+             <Stethoscope className="h-5 w-5" />
+             Pengobatan
+           </button>
 
-                <button
-                  onClick={() => router.push('/admin/consultations')}
-                  className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    viewMode === 'consultations'
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  <Video className="h-5 w-5" />
-                  Konsultasi
-                </button>
+           <button
+             onClick={() => router.push('/admin/consultations')}
+             className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+               viewMode === 'consultations'
+                 ? 'bg-blue-50 text-blue-700'
+                 : 'text-gray-700 hover:bg-gray-100'
+             }`}
+           >
+             <Video className="h-5 w-5" />
+             Konsultasi
+           </button>
 
-                 <button
-                   onClick={() => router.push('/admin/doctors')}
-                   className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                     pathname === '/admin/doctors'
-                       ? 'bg-blue-50 text-blue-700'
-                       : 'text-gray-700 hover:bg-gray-100'
-                   }`}
-                 >
-                  <UserCog className="h-5 w-5" />
-                  Dokter
-                </button>
-             </nav>
+          {/* Separator */}
+          <div className="my-2 border-t border-gray-200" />
+
+          {/* Registration Services */}
+          <p className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            Layanan Registrasi
+          </p>
+
+           <button
+             onClick={() => setViewMode('verification')}
+             className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+               viewMode === 'verification'
+                 ? 'bg-blue-50 text-blue-700'
+                 : 'text-gray-700 hover:bg-gray-100'
+             }`}
+           >
+             <ClipboardCheck className="h-5 w-5" />
+             Verifikasi NKV & Praktek
+           </button>
+          </nav>
 
           {/* User Section */}
           <div className="px-4 py-4 border-t border-gray-200">
@@ -821,65 +848,65 @@ export default function AdminPage() {
            </div>
          </header>
 
-         {/* Page Content */}
-         <main className="flex-1 p-4 lg:p-8 overflow-auto lg:pl-64">
-          {/* Dashboard View */}
-          {viewMode === 'dashboard' && (
-            <>
-              <div className="mb-8">
-                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
-                  Dashboard Admin
-                </h1>
-                <p className="text-gray-600 mt-1">
-                  Ringkasan sistem rekomendasi online
-                </p>
-              </div>
+          {/* Page Content */}
+          <main className="flex-1 p-4 lg:p-8 overflow-auto lg:pl-64">
+           {/* Dashboard View */}
+           {viewMode === 'dashboard' && (
+             <>
+               <div className="mb-8">
+                 <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
+                   Dashboard Admin
+                 </h1>
+                 <p className="text-gray-600 mt-1">
+                   Ringkasan sistem rekomendasi online
+                 </p>
+               </div>
 
-              {/* Stats Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium text-gray-600">Total Permohonan</CardTitle>
-                    <FileText className="h-4 w-4 text-blue-600" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-gray-900">{stats.total}</div>
-                    <p className="text-xs text-gray-500 mt-1">Semua aplikasi</p>
-                  </CardContent>
-                </Card>
+               {/* Stats Grid */}
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                 <Card>
+                   <CardHeader className="flex flex-row items-center justify-between pb-2">
+                     <CardTitle className="text-sm font-medium text-gray-600">Total Permohonan</CardTitle>
+                     <FileText className="h-4 w-4 text-blue-600" />
+                   </CardHeader>
+                   <CardContent>
+                     <div className="text-3xl font-bold text-gray-900">{stats.total}</div>
+                     <p className="text-xs text-gray-500 mt-1">Semua aplikasi</p>
+                   </CardContent>
+                 </Card>
 
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium text-gray-600">Perlu Verifikasi</CardTitle>
-                    <Clock className="h-4 w-4 text-yellow-600" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-gray-900">{stats.submitted + stats.documentVerification}</div>
-                    <p className="text-xs text-gray-500 mt-1">Diajukan & verifikasi dokumen</p>
-                  </CardContent>
-                </Card>
+                 <Card>
+                   <CardHeader className="flex flex-row items-center justify-between pb-2">
+                     <CardTitle className="text-sm font-medium text-gray-600">Perlu Verifikasi</CardTitle>
+                     <Clock className="h-4 w-4 text-yellow-600" />
+                   </CardHeader>
+                   <CardContent>
+                     <div className="text-3xl font-bold text-gray-900">{stats.submitted + stats.documentVerification}</div>
+                     <p className="text-xs text-gray-500 mt-1">Diajukan & verifikasi dokumen</p>
+                   </CardContent>
+                 </Card>
 
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium text-gray-600">Diproses</CardTitle>
-                    <BarChart3 className="h-4 w-4 text-purple-600" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-gray-900">{stats.inProgress}</div>
-                    <p className="text-xs text-gray-500 mt-1">Pemeriksaan & penilaian</p>
-                  </CardContent>
-                </Card>
+                 <Card>
+                   <CardHeader className="flex flex-row items-center justify-between pb-2">
+                     <CardTitle className="text-sm font-medium text-gray-600">Diproses</CardTitle>
+                     <BarChart3 className="h-4 w-4 text-purple-600" />
+                   </CardHeader>
+                   <CardContent>
+                     <div className="text-3xl font-bold text-gray-900">{stats.inProgress}</div>
+                     <p className="text-xs text-gray-500 mt-1">Pemeriksaan & penilaian</p>
+                   </CardContent>
+                 </Card>
 
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium text-gray-600">Disetujui</CardTitle>
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-gray-900">{stats.approved}</div>
-                    <p className="text-xs text-gray-500 mt-1">Selesai</p>
-                  </CardContent>
-                </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-600">Disetujui</CardTitle>
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-gray-900">{stats.approved}</div>
+                      <p className="text-xs text-gray-500 mt-1">Selesai</p>
+                    </CardContent>
+                  </Card>
                </div>
 
                {/* Detailed Stats */}
@@ -895,11 +922,33 @@ export default function AdminPage() {
                      </Card>
                    );
                  })}
+                 
+                 {/* Service-specific stats */}
+                 <Card className="hover:shadow-md transition-shadow">
+                   <CardContent className="pt-4">
+                     <div className="text-2xl font-bold text-gray-900">{stats.veterinaryHealth}</div>
+                     <p className="text-xs text-gray-600 truncate">Pelayanan Kesehatan Hewan</p>
+                   </CardContent>
+                 </Card>
+                 
+                 <Card className="hover:shadow-md transition-shadow">
+                   <CardContent className="pt-4">
+                     <div className="text-2xl font-bold text-gray-900">{stats.nkvService}</div>
+                     <p className="text-xs text-gray-600 truncate">Rekomendasi NKV</p>
+                   </CardContent>
+                 </Card>
+                 
+                 <Card className="hover:shadow-md transition-shadow">
+                   <CardContent className="pt-4">
+                     <div className="text-2xl font-bold text-gray-900">{stats.practiceRecommendation}</div>
+                     <p className="text-xs text-gray-600 truncate">Rekomendasi Praktek</p>
+                   </CardContent>
+                 </Card>
                </div>
 
                {/* Dashboard View ends */}
                </>
-             )}
+           )}
 
             {/* Applications View */}
             {viewMode === 'applications' && (

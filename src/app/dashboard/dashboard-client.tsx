@@ -24,11 +24,14 @@ import {
   AlertCircle,
   ClipboardCheck,
   ArrowLeft,
+  ArrowRight,
   Heart,
   Calendar,
   Pill,
   Stethoscope,
-  Clipboard
+  Clipboard,
+  User as UserIcon,
+  Settings
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -53,10 +56,10 @@ import type { Profile, NKVRegistration, DokterHewanRegistration, VeterinaryRegis
 
 type Registration = (NKVRegistration & { type: 'NKV' }) | (DokterHewanRegistration & { type: 'Dokter Hewan' }) | (VeterinaryRegistration & { type: 'Veterinary' });
 
-import { User } from '@supabase/supabase-js';
+import type { User } from '@supabase/supabase-js';
 
 interface DashboardClientProps {
-  user: User
+  user: any
   profile: Profile | null
   nkvRegistrations: NKVRegistration[]
   dokterRegistrations: DokterHewanRegistration[]
@@ -259,35 +262,17 @@ const handleResubmit = async (id: string, files?: Array<{ file_name: string; fil
             </button>
           </div>
 
-        <nav className="flex-1 px-4 py-6 space-y-1">
-              <a href="/dashboard" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700">
-                <Activity className="h-5 w-5" /> Dashboard
-              </a>
-              <a href="/nkv/register" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
-                <Plus className="h-5 w-5" /> Permohonan NKV
-              </a>
-              <a href="/dokter-hewan/register" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
-                <Plus className="h-5 w-5" /> Praktek Dokter Hewan
-              </a>
-              <a href="/services/veterinary/register" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
-                <Heart className="h-5 w-5" /> Registrasi Hewan
-              </a>
-              <a href="/dashboard/vaccinations" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
-                <Calendar className="h-5 w-5" /> Booking Vaksinasi
-              </a>
-              <a href="/dashboard/treatments" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
-                <Pill className="h-5 w-5" /> Pembelian Obat
-              </a>
-              <a href="/dashboard/consultations" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
-                <Stethoscope className="h-5 w-5" /> Konsultasi Dokter
-              </a>
-              <a href="/dashboard/history" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
-                <Clipboard className="h-5 w-5" /> Rekam Medis
-              </a>
-              <button onClick={() => setShowTrackingModal(true)} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
-                <Search className="h-5 w-5" /> Lacak Permohonan
-              </button>
-            </nav>
+         <nav className="flex-1 px-4 py-6 space-y-1">
+               <a href="/dashboard" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700">
+                 <Activity className="h-5 w-5" /> Dashboard
+               </a>
+               <a href="/profile" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
+                  <UserIcon className="h-5 w-5" /> Manajemen Profil
+               </a>
+               <a href="/settings" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
+                 <Settings className="h-5 w-5" /> Pengaturan Akun
+               </a>
+             </nav>
 
           <div className="px-4 py-4 border-t border-gray-200">
             <div className="flex items-center gap-3">
@@ -309,28 +294,115 @@ const handleResubmit = async (id: string, files?: Array<{ file_name: string; fil
       </aside>
 
        {/* Main Content */}
-       <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
-         <header className="bg-white border-b border-gray-200 lg:hidden">
-           <div className="flex items-center justify-between h-16 px-4">
-             <button onClick={() => setIsMobileMenuOpen(true)} className="text-gray-500 hover:text-gray-700">
-               <Menu className="h-6 w-6" />
-             </button>
-             <div className="flex items-center gap-2">
-               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                 <Activity className="h-5 w-5 text-white" />
-               </div>
-               <span className="font-bold text-gray-900">VetSys</span>
-             </div>
-             <div className="w-6" />
-           </div>
-         </header>
+        <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
+          <header className="bg-white border-b border-gray-200 lg:hidden">
+            <div className="flex items-center justify-between h-16 px-4">
+              <button onClick={() => setIsMobileMenuOpen(true)} className="text-gray-500 hover:text-gray-700">
+                <Menu className="h-6 w-6" />
+              </button>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <Activity className="h-5 w-5 text-white" />
+                </div>
+                <span className="font-bold text-gray-900">VetSys</span>
+              </div>
+              <div className="w-6" />
+            </div>
+          </header>
 
-         <main className="flex-1 p-4 lg:p-8 overflow-auto">
-          {/* Welcome */}
-          <div className="mb-8">
-            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-gray-600 mt-1">Selamat datang, {profile?.full_name?.split(' ')[0] || 'User'}! Kelola dan pantau permohonan Anda.</p>
-          </div>
+          <main className="flex-1 p-4 lg:p-8 overflow-auto">
+            {/* Welcome */}
+            <div className="mb-8">
+              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Dashboard</h1>
+              <p className="text-gray-600 mt-1">Selamat datang, {profile?.full_name?.split(' ')[0] || 'User'}! Kelola dan pantau permohonan Anda.</p>
+            </div>
+            
+            {/* Main Services */}
+            <div className="grid gap-6 mb-8 md:grid-cols-1 lg:grid-cols-3">
+               {/* Veterinary Health Services */}
+               <a href="/dashboard/pets" className="group relative overflow-hidden rounded-xl border border-gray-200 bg-white hover:border-blue-500 hover:bg-blue-50 transition-all duration-200">
+                <div className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                     <div className="flex items-center gap-3">
+                       <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                         <Heart className="h-5 w-5 text-blue-600" />
+                       </div>
+                       <div>
+                         <h3 className="font-semibold text-gray-900">Pelayanan Kesehatan Hewan</h3>
+                         <p className="text-sm text-gray-500">Vaksinasi, pengobatan, dan konsultasi hewan peliharaan</p>
+                       </div>
+                     </div>
+                     <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                       <ArrowRight className="h-4 w-4 text-gray-400" />
+                     </span>
+                   </div>
+                  <div className="mt-4">
+                    <p className="text-gray-600">Ajukan permohonan untuk:</p>
+                    <ul className="mt-2 list-disc list-inside text-sm text-gray-500">
+                      <li>Vaksinasi hewan sehat</li>
+                      <li>Pengobatan hewan sakit</li>
+                      <li>Konsultasi kesehatan hewan</li>
+                    </ul>
+                  </div>
+                </div>
+              </a>
+              
+              {/* NKV Registration */}
+              <a href="/nkv/register" className="group relative overflow-hidden rounded-xl border border-gray-200 bg-white hover:border-blue-500 hover:bg-blue-50 transition-all duration-200">
+                <div className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                     <div className="flex items-center gap-3">
+                       <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                         <ClipboardCheck className="h-5 w-5 text-blue-600" />
+                       </div>
+                       <div>
+                         <h3 className="font-semibold text-gray-900">Nomor Kontrol Veteriner</h3>
+                         <p className="text-sm text-gray-500">Pendaftaran dan verifikasi NKV</p>
+                       </div>
+                     </div>
+                     <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                       <ArrowRight className="h-4 w-4 text-gray-400" />
+                     </span>
+                   </div>
+                  <div className="mt-4">
+                    <p className="text-gray-600">Untuk:</p>
+                    <ul className="mt-2 list-disc list-inside text-sm text-gray-500">
+                      <li>Pengajuan permohonan NKV baru</li>
+                      <li>Pengembangan usaha bidang kesehatan hewan</li>
+                      <li>Pembaruan dan perpanjangan NKV</li>
+                    </ul>
+                  </div>
+                </div>
+              </a>
+              
+              {/* Veterinary Practice Recommendation */}
+              <a href="/dokter-hewan/register" className="group relative overflow-hidden rounded-xl border border-gray-200 bg-white hover:border-blue-500 hover:bg-blue-50 transition-all duration-200">
+                <div className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                     <div className="flex items-center gap-3">
+                       <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                         <Stethoscope className="h-5 w-5 text-blue-600" />
+                       </div>
+                       <div>
+                         <h3 className="font-semibold text-gray-900">Rekomendasi Praktek Dokter Hewan</h3>
+                         <p className="text-sm text-gray-500">Verifikasi dan rekomendasi praktek dokter hewan</p>
+                       </div>
+                     </div>
+                     <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                       <ArrowRight className="h-4 w-4 text-gray-400" />
+                     </span>
+                   </div>
+                  <div className="mt-4">
+                    <p className="text-gray-600">Untuk dokter hewan yang:</p>
+                    <ul className="mt-2 list-disc list-inside text-sm text-gray-500">
+                      <li>Membuka praktik baru</li>
+                      <li>Mengubah lokasi praktik</li>
+                      <li>Memperpanjang izin praktik</li>
+                    </ul>
+                  </div>
+                </div>
+              </a>
+            </div>
 
           {/* Stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
