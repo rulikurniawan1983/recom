@@ -259,23 +259,35 @@ const handleResubmit = async (id: string, files?: Array<{ file_name: string; fil
             </button>
           </div>
 
-       <nav className="flex-1 px-4 py-6 space-y-1">
-             <a href="/dashboard" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700">
-               <Activity className="h-5 w-5" /> Dashboard
-             </a>
-             <a href="/nkv/register" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
-               <Plus className="h-5 w-5" /> Permohonan NKV
-             </a>
-             <a href="/dokter-hewan/register" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
-               <Plus className="h-5 w-5" /> Praktek Dokter Hewan
-             </a>
-             <a href="/services/veterinary/register" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
-               <Plus className="h-5 w-5" /> Pelayanan Kesehatan Hewan
-             </a>
-             <button onClick={() => setShowTrackingModal(true)} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
-               <Search className="h-5 w-5" /> Lacak Permohonan
-             </button>
-           </nav>
+        <nav className="flex-1 px-4 py-6 space-y-1">
+              <a href="/dashboard" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700">
+                <Activity className="h-5 w-5" /> Dashboard
+              </a>
+              <a href="/nkv/register" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
+                <Plus className="h-5 w-5" /> Permohonan NKV
+              </a>
+              <a href="/dokter-hewan/register" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
+                <Plus className="h-5 w-5" /> Praktek Dokter Hewan
+              </a>
+              <a href="/services/veterinary/register" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
+                <Heart className="h-5 w-5" /> Registrasi Hewan
+              </a>
+              <a href="/dashboard/vaccinations" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
+                <Calendar className="h-5 w-5" /> Booking Vaksinasi
+              </a>
+              <a href="/dashboard/treatments" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
+                <Pill className="h-5 w-5" /> Pembelian Obat
+              </a>
+              <a href="/dashboard/consultations" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
+                <Stethoscope className="h-5 w-5" /> Konsultasi Dokter
+              </a>
+              <a href="/dashboard/history" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
+                <Clipboard className="h-5 w-5" /> Rekam Medis
+              </a>
+              <button onClick={() => setShowTrackingModal(true)} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
+                <Search className="h-5 w-5" /> Lacak Permohonan
+              </button>
+            </nav>
 
           <div className="px-4 py-4 border-t border-gray-200">
             <div className="flex items-center gap-3">
@@ -317,7 +329,7 @@ const handleResubmit = async (id: string, files?: Array<{ file_name: string; fil
           {/* Welcome */}
           <div className="mb-8">
             <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-gray-600 mt-1">Selamat datang, {profile?.full_name?.split(' ')[0] || 'User'}! Kelola dan pantau permohonan rekomendasi Anda.</p>
+            <p className="text-gray-600 mt-1">Selamat datang, {profile?.full_name?.split(' ')[0] || 'User'}! Kelola dan pantau permohonan Anda.</p>
           </div>
 
           {/* Stats */}
@@ -328,24 +340,7 @@ const handleResubmit = async (id: string, files?: Array<{ file_name: string; fil
             <StatCard title="Disetujui" value={stats.approved} icon={<CheckCircle className="h-4 w-4 text-green-600" />} />
           </div>
 
-           {/* Quick Actions */}
-           <div className="flex flex-col sm:flex-row gap-4 mb-6">
-             <a href="/services/veterinary/register" className="inline-flex items-center justify-center rounded-md text-sm font-medium bg-teal-600 text-white hover:bg-teal-700 h-10 px-4 py-2 transition-colors">
-               <Heart className="h-4 w-4 mr-2" /> Registrasi Hewan
-             </a>
-             <a href="/dashboard/vaccinations" className="inline-flex items-center justify-center rounded-md text-sm font-medium bg-green-600 text-white hover:bg-green-700 h-10 px-4 py-2 transition-colors">
-               <Calendar className="h-4 w-4 mr-2" /> Booking Vaksinasi
-             </a>
-             <a href="/dashboard/treatments" className="inline-flex items-center justify-center rounded-md text-sm font-medium bg-orange-600 text-white hover:bg-orange-700 h-10 px-4 py-2 transition-colors">
-               <Pill className="h-4 w-4 mr-2" /> Pembelian Obat
-             </a>
-             <a href="/dashboard/consultations" className="inline-flex items-center justify-center rounded-md text-sm font-medium bg-purple-600 text-white hover:bg-purple-700 h-10 px-4 py-2 transition-colors">
-               <Stethoscope className="h-4 w-4 mr-2" /> Konsultasi Dokter
-             </a>
-             <a href="/dashboard/history" className="inline-flex items-center justify-center rounded-md text-sm font-medium bg-cyan-600 text-white hover:bg-cyan-700 h-10 px-4 py-2 transition-colors">
-               <Clipboard className="h-4 w-4 mr-2" /> Rekam Medis
-             </a>
-           </div>
+
 
           {/* Filters */}
           <div className="flex flex-col lg:flex-row gap-4 mb-6">

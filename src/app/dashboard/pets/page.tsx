@@ -23,33 +23,33 @@ export default async function PetsPage() {
     redirect('/admin')
   }
 
-  // Fetch pets
-  const { data: pets } = await supabase
-    .from('pets')
-    .select(`
-      *,
-      vaccinations (
-        id,
-        vaccination_date,
-        status,
-        vaccine_type,
-        qr_code
-      ),
-      treatments (
-        id,
-        scheduled_date,
-        status
-      ),
-      consultations (
-        id,
-        scheduled_date,
-        status,
-        consultation_type
-      )
-    `)
-    .eq('user_id', user.id)
-    .eq('is_active', true)
-    .order('created_at', { ascending: false })
+   // Fetch pets
+   const { data: pets } = await supabase
+     .from('pets')
+     .select(`
+       *,
+       vaccinations (
+         id,
+         vaccination_date,
+         status,
+         vaccine_type,
+         qr_code
+       ),
+       treatments (
+         id,
+         scheduled_date,
+         status
+       ),
+       consultations (
+         id,
+         scheduled_date,
+         status,
+         consultation_type
+       )
+     `)
+     .eq('user_id', user.id)
+     .eq('is_active', true)
+     .order('created_at', { ascending: false })
 
   return (
     <VetDashboardShell>

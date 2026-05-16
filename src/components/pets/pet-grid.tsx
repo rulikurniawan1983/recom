@@ -22,9 +22,9 @@ interface Pet {
   color: string | null
   distinctive_features: string | null
   health_history: string | null
-  vaccinations: Array<{ id: string; status: string }>
-  treatments: Array<{ id: string; status: string }>
-  consultations: Array<{ id: string; status: string }>
+  vaccinations: Array<{ id: string; status: string }> | null
+  treatments: Array<{ id: string; status: string }> | null
+  consultations: Array<{ id: string; status: string }> | null
 }
 
 interface PetGridProps {
@@ -47,9 +47,10 @@ export default function PetGrid({ pets }: PetGridProps) {
     return parts.join(' ') || '0 bulan'
   }
 
-  const getActiveCount = (items: any[]) => {
-    return items.filter(i => i.status === 'pending' || i.status === 'confirmed').length
-  }
+const getActiveCount = (items: any[] | null) => {
+  if (!items) return 0
+  return items.filter(i => i.status === 'pending' || i.status === 'confirmed').length
+}
 
   if (pets.length === 0) {
     return (

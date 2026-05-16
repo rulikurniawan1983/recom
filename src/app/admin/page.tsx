@@ -2,7 +2,7 @@
 
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import {
   BarChart3,
   CheckCircle,
@@ -113,79 +113,73 @@ const TYPE_COLORS: Record<string, string> = {
 
 export default function AdminPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const [registrations, setRegistrations] = useState<AdminRegistration[]>([]);
   const [users, setUsers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState<RegistrationStatus | 'all'>('all');
-    const [typeFilter, setTypeFilter] = useState<'all' | 'NKV' | 'Dokter Hewan'>('all');
-    const [viewMode, setViewMode] = useState<'dashboard' | 'applications' | 'users' | 'verification' | 'vaccinations' | 'treatments' | 'consultations' | 'doctors'>('dashboard');
-    const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [selectedReg, setSelectedReg] = useState<AdminRegistration | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<RegistrationStatus | 'all'>('all');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'NKV' | 'Dokter Hewan'>('all');
+  const [viewMode, setViewMode] = useState<'dashboard' | 'applications' | 'users' | 'verification' | 'vaccinations' | 'treatments' | 'consultations' | 'doctors'>('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [selectedReg, setSelectedReg] = useState<AdminRegistration | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
-   const [documentsTab, setDocumentsTab] = useState('documents');
-   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
+  const [documentsTab, setDocumentsTab] = useState('documents');
+  const [showDocumentsModal, setShowDocumentsModal] = useState(false);
 
-   // Document action modals
-   const [docActionOpen, setDocActionOpen] = useState(false);
-   const [actionDoc, setActionDoc] = useState<Document | null>(null);
-   const [actionType, setActionType] = useState<'approve' | 'reject' | 'revision'>('approve');
-   const [actionNotes, setActionNotes] = useState('');
-   const [updatingDoc, setUpdatingDoc] = useState(false);
+  // Document action modals
+  const [docActionOpen, setDocActionOpen] = useState(false);
+  const [actionDoc, setActionDoc] = useState<Document | null>(null);
+  const [actionType, setActionType] = useState<'approve' | 'reject' | 'revision'>('approve');
+  const [actionNotes, setActionNotes] = useState('');
+  const [updatingDoc, setUpdatingDoc] = useState(false);
 
-   // Inspection scheduling
-   const [scheduleOpen, setScheduleOpen] = useState(false);
-   const [scheduleDate, setScheduleDate] = useState('');
-   const [scheduleTime, setScheduleTime] = useState('');
-   const [scheduleLocation, setScheduleLocation] = useState('');
-   const [scheduleNotes, setScheduleNotes] = useState('');
-   const [scheduling, setScheduling] = useState(false);
+  // Inspection scheduling
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState('');
+  const [scheduleTime, setScheduleTime] = useState('');
+  const [scheduleLocation, setScheduleLocation] = useState('');
+  const [scheduleNotes, setScheduleNotes] = useState('');
+  const [scheduling, setScheduling] = useState(false);
 
-   // Assessment
-   const [assessOpen, setAssessOpen] = useState(false);
-   const [assessmentScore, setAssessmentScore] = useState<number>(0);
-   const [assessmentNotes, setAssessmentNotes] = useState('');
-   const [recommendationFileUrl, setRecommendationFileUrl] = useState('');
-   const [assessing, setAssessing] = useState(false);
+  // Assessment
+  const [assessOpen, setAssessOpen] = useState(false);
+  const [assessmentScore, setAssessmentScore] = useState<number>(0);
+  const [assessmentNotes, setAssessmentNotes] = useState('');
+  const [recommendationFileUrl, setRecommendationFileUrl] = useState('');
+  const [assessing, setAssessing] = useState(false);
 
-   // Document preview
-   const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
-   const [previewOpen, setPreviewOpen] = useState(false);
+  // Document preview
+  const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+  // Delete modal
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  // Registration detail modal state
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [detailReg, setDetailReg] = useState<Registration | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  // User email
+  const [userEmail, setUserEmail] = useState<string>('admin@example.com');
 
   // User creation modal
-   const [createUserOpen, setCreateUserOpen] = useState(false);
-   const [creatingUser, setCreatingUser] = useState(false);
+  const [createUserOpen, setCreateUserOpen] = useState(false);
+  const [creatingUser, setCreatingUser] = useState(false);
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [newUserRole, setNewUserRole] = useState<'user' | 'admin'>('user');
 
-   const [newUserEmail, setNewUserEmail] = useState('');
-   const [newUserName, setNewUserName] = useState('');
-   const [newUserPassword, setNewUserPassword] = useState('');
-   const [newUserRole, setNewUserRole] = useState<'user' | 'admin'>('user');
-
-   const [deleteUserOpen, setDeleteUserOpen] = useState(false);
-   const [deletingUser, setDeletingUser] = useState(false);
+  const [deleteUserOpen, setDeleteUserOpen] = useState(false);
+  const [deletingUser, setDeletingUser] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
 
-  // Verification modal
-  const [verifyOpen, setVerifyOpen] = useState(false);
-  const [verifyAction, setVerifyAction] = useState<'approve' | 'reject' | 'request_revision'>('approve');
-  const [verifyNotes, setVerifyNotes] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-
-    // Delete modal
-    const [deleteOpen, setDeleteOpen] = useState(false);
-    const [deleting, setDeleting] = useState(false);
-
-    // Registration detail modal state
-    const [showDetailModal, setShowDetailModal] = useState(false);
-    const [detailReg, setDetailReg] = useState<Registration | null>(null);
-    const [detailLoading, setDetailLoading] = useState(false);
-
-    // User email
-    const [userEmail, setUserEmail] = useState<string>('admin@example.com');
-
-    // Stats calculation
+  // Stats calculation
   const stats = useMemo(() => {
     const total = registrations.length;
     const draft = registrations.filter(r => r.status === 'draft').length;
@@ -235,6 +229,12 @@ export default function AdminPage() {
 // Computed variants for view toggle buttons
 // const dashboardVariant = viewMode === 'dashboard' ? 'default' : 'outline';
 // const applicationsVariant = viewMode === 'applications' ? 'default' : 'outline';
+
+  // Verification modal
+  const [verifyOpen, setVerifyOpen] = useState(false);
+  const [verifyAction, setVerifyAction] = useState<'approve' | 'reject' | 'request_revision'>('approve');
+  const [verifyNotes, setVerifyNotes] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const fetchData = useCallback(async () => {
     // Defer state updates to avoid synchronous setState in effect
@@ -761,14 +761,14 @@ export default function AdminPage() {
                   Konsultasi
                 </button>
 
-                <button
-                  onClick={() => router.push('/admin/doctors')}
-                  className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    viewMode === 'doctors'
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
+                 <button
+                   onClick={() => router.push('/admin/doctors')}
+                   className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                     pathname === '/admin/doctors'
+                       ? 'bg-blue-50 text-blue-700'
+                       : 'text-gray-700 hover:bg-gray-100'
+                   }`}
+                 >
                   <UserCog className="h-5 w-5" />
                   Dokter
                 </button>

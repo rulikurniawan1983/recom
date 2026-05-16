@@ -119,6 +119,9 @@ export default function AddPetModal({ isOpen, onClose }: AddPetModalProps) {
       <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b flex items-center justify-between sticky top-0 bg-white">
           <h2 className="text-2xl font-bold text-gray-900">Tambah Hewan Baru</h2>
+          <p className="text-gray-900 text-sm">
+            Isi form di bawah ini untuk mendaftarkan hewan peliharaan Anda ke sistem rekomendasi layanan kesehatan hewan.
+          </p>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -146,7 +149,7 @@ export default function AddPetModal({ isOpen, onClose }: AddPetModalProps) {
                 value={formData.name}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent placeholder:text-gray-900"
                 placeholder="Contoh: Budi, Milo, etc"
               />
             </div>
@@ -161,7 +164,7 @@ export default function AddPetModal({ isOpen, onClose }: AddPetModalProps) {
                 value={formData.species}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent placeholder:text-gray-900 text-gray-900"
               >
                 <option value="">Pilih jenis...</option>
                 {speciesOptions.map(opt => (
@@ -180,7 +183,7 @@ export default function AddPetModal({ isOpen, onClose }: AddPetModalProps) {
                 name="breed"
                 value={formData.breed}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent placeholder:text-gray-900"
                 placeholder="Contoh: Labrador, Persian, etc"
               />
             </div>
@@ -259,7 +262,7 @@ export default function AddPetModal({ isOpen, onClose }: AddPetModalProps) {
                 name="color"
                 value={formData.color}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent placeholder:text-gray-900"
                 placeholder="Contoh: Coklat, Putih, Belang, etc"
               />
             </div>
@@ -274,7 +277,7 @@ export default function AddPetModal({ isOpen, onClose }: AddPetModalProps) {
                 name="distinctive_features"
                 value={formData.distinctive_features}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent placeholder:text-gray-900"
                 placeholder="Ciri khas fisik, seperti belang, cacat, dll"
               />
             </div>
@@ -289,7 +292,7 @@ export default function AddPetModal({ isOpen, onClose }: AddPetModalProps) {
                 value={formData.health_history}
                 onChange={handleChange}
                 rows={3}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent placeholder:text-gray-900"
                 placeholder="Vaksinasi sebelumnya, penyakit yang pernah diderita, alergi, operasi, dll"
               />
             </div>

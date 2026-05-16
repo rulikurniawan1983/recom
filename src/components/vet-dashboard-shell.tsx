@@ -43,35 +43,28 @@ export default function VetDashboardShell({ children }: { children: React.ReactN
           <p className="text-sm text-gray-500 mt-1">Pelayanan Kesehatan Hewan</p>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1">
-          {navItems.map((item) => {
-            const Icon = item.icon
-            const isActive = pathname === item.href ||
-              (item.href !== '/dashboard' && pathname.startsWith(item.href))
+           <nav className="flex-1 p-4 space-y-1">
+           {navItems.map((item) => {
+             const Icon = item.icon
+             const isActive = pathname === item.href ||
+               (item.href !== '/dashboard' && pathname.startsWith(item.href))
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                  isActive
-                    ? 'bg-teal-50 text-teal-700 font-medium'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <Icon className="h-5 w-5" />
-                {item.label}
-              </Link>
-            )
-          })}
-          <button
-            onClick={() => setShowServiceModal(true)}
-            className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100"
-          >
-            <PlusCircle className="h-5 w-5" />
-            Layanan
-          </button>
-        </nav>
+             return (
+               <Link
+                 key={item.href}
+                 href={item.href}
+                 className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                   isActive
+                     ? 'bg-teal-50 text-teal-700 font-medium'
+                     : 'text-gray-700 hover:bg-gray-100'
+                 }`}
+               >
+                 <Icon className="h-5 w-5" />
+                 {item.label}
+               </Link>
+             )
+           })}
+         </nav>
 
         <div className="p-4 border-t">
           <Link
@@ -122,14 +115,7 @@ export default function VetDashboardShell({ children }: { children: React.ReactN
           {children}
         </main>
 
-        {/* Floating Action Button - Mobile only */}
-        <button
-          onClick={() => setShowServiceModal(true)}
-          className="md:hidden fixed bottom-6 right-6 w-14 h-14 bg-teal-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-teal-700 transition-colors z-20"
-          aria-label="Buka Layanan"
-        >
-          <PlusCircle className="h-7 w-7" />
-        </button>
+
 
         {/* Service Selection Modal */}
         <ServiceSelectionModal
