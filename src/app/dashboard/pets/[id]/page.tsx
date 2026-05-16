@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { X } from 'lucide-react'
-import { Link } from 'next/router'
+import { X, Pencil, ArrowLeft } from 'lucide-react'
+import Link from 'next/link'
 
 export default function PetDetailPage() {
   const params = useParams()
@@ -13,10 +13,10 @@ export default function PetDetailPage() {
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [pet, setPet] = useState(null)
-  const [vaccinations, setVaccinations] = useState([])
-  const [treatments, setTreatments] = useState([])
-  const [consultations, setConsultations] = useState([])
+  const [pet, setPet] = useState<any>(null)
+  const [vaccinations, setVaccinations] = useState<any[]>([])
+  const [treatments, setTreatments] = useState<any[]>([])
+  const [consultations, setConsultations] = useState<any[]>([])
 
   const supabase = createClient()
 
@@ -142,14 +142,13 @@ export default function PetDetailPage() {
               href={`/dashboard/pets/${pet.id}/edit`}
               className="p-2 hover:bg-gray-100 rounded-full"
             >
-              <X className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+              <Pencil className="h-5 w-5 text-gray-400 hover:text-gray-600" />
             </Link>
             <button 
               onClick={() => router.push('/dashboard/pets')}
               className="p-2 hover:bg-gray-100 rounded-full"
             >
-              <X className="h-5 w-5 text-gray-400 hover:text-gray-600" 
-                 title="Kembali ke daftar hewan" />
+              <ArrowLeft className="h-5 w-5 text-gray-400 hover:text-gray-600" />
             </button>
           </div>
         </div>

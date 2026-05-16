@@ -30,10 +30,12 @@ interface Vaccination {
 
 interface AdminVaccinationsTableProps {
   vaccinations: Vaccination[]
-  doctors: Doctor[]
+  doctors?: Doctor[]
+  loading?: boolean
+  onBack?: () => void
 }
 
-export default function AdminVaccinationsTable({ vaccinations, doctors }: AdminVaccinationsTableProps) {
+export default function AdminVaccinationsTable({ vaccinations, doctors = [], loading, onBack }: AdminVaccinationsTableProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [updating, setUpdating] = useState<string | null>(null)
@@ -127,8 +129,25 @@ export default function AdminVaccinationsTable({ vaccinations, doctors }: AdminV
 
   return (
     <div className="space-y-4">
-      {/* Filters */}
-      <div className="bg-white p-4 rounded-lg border flex flex-col sm:flex-row gap-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">Vaksinasi</h1>
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50"
+          >
+            Kembali ke Dashboard
+          </button>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="text-center py-8">Memuat data vaksinasi...</div>
+      ) : (
+        <>
+          {/* Filters */}
+          <div className="bg-white p-4 rounded-lg border flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
@@ -290,50 +309,13 @@ export default function AdminVaccinationsTable({ vaccinations, doctors }: AdminV
           </table>
         </div>
 
-        {filteredVaccinations.length === 0 && (
-          <div className="text-center py-12 text-gray-500">
-            Tidak ada data vaksinasi
+{filteredVaccinations.length === 0 && (
+              <div className="text-center py-12 text-gray-500">
+                Tidak ada data vaksinasi
+              </div>
+            )}
           </div>
-        )}
-      </div>
-
-      {/* Doctor Assignment Modal */}
-      {assignDoctor && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-bold mb-4">Tugaskan Dokter</h3>
-            <p className="text-gray-600 mb-4">
-              Untuk hewan: {assignDoctor.pets?.name}
-            </p>
-            <select
-              value={selectedDoctor}
-              onChange={(e) => setSelectedDoctor(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg mb-4"
-            >
-              <option value="">Pilih dokter...</option>
-              {doctors.map(doc => (
-                <option key={doc.id} value={doc.id}>
-                  Dr. {doc.profiles?.full_name}
-                </option>
-              ))}
-            </select>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setAssignDoctor(null)}
-                className="px-4 py-2 border rounded-lg hover:bg-gray-50"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleAssignDoctor}
-                disabled={!selectedDoctor || updating === assignDoctor.id}
-                className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50"
-              >
-                {updating === assignDoctor.id ? 'Menyimpan...' : 'Simpan'}
-              </button>
-            </div>
-          </div>
-        </div>
+        </>
       )}
     </div>
   )
