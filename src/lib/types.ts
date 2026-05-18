@@ -102,6 +102,7 @@ export interface Vaccination {
   doctor_id: string | null
   schedule_id: string | null
   vaccination_date: string
+  batch_id: string | null
   batch_number: string | null
   vaccine_type: string
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show'
@@ -114,6 +115,7 @@ export interface Vaccination {
   pets?: Pet
   doctors?: Doctor
   vaccination_schedules?: VaccinationSchedule
+  vaccine_batches?: VaccineBatch
 }
 
 export interface TreatmentSchedule {
@@ -384,4 +386,99 @@ export interface InspectionSchedule {
   status: 'scheduled' | 'completed' | 'cancelled'
   notes: string | null
   created_at: string
+}
+
+// ============================================
+// VACCINE STOCK MANAGEMENT TYPES
+// ============================================
+
+export interface VaccineType {
+  id: string
+  name: string
+  manufacturer: string
+  description: string | null
+  target_species: string | null
+  dosage_quantity: number
+  dosage_unit: string
+  min_stock_threshold: number
+  storage_temperature: string | null
+  shelf_life_months: number | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface VaccineBatch {
+  id: string
+  vaccine_type_id: string
+  batch_number: string
+  manufacture_date: string | null
+  expiry_date: string
+  initial_quantity: number
+  available_quantity: number
+  reserved_quantity: number
+  unit_cost: number | null
+  supplier: string | null
+  supplier_invoice: string | null
+  received_date: string | null
+  storage_location: string | null
+  notes: string | null
+  status: 'active' | 'low_stock' | 'expired' | 'depleted' | 'quarantined'
+  created_at: string
+  updated_at: string
+  vaccine_types?: VaccineType
+}
+
+export interface VaccineStockTransaction {
+  id: string
+  batch_id: string
+  vaccination_id: string | null
+  transaction_type: 'incoming' | 'outgoing' | 'adjustment' | 'reservation' | 'release'
+  quantity: number
+  unit_cost: number | null
+  total_cost: number | null
+  notes: string | null
+  created_by: string | null
+  created_at: string
+  vaccine_batches?: VaccineBatch
+  profiles?: {
+    full_name: string | null
+  }
+}
+
+export interface VaccineStockAlert {
+  id: string
+  vaccine_type_id: string
+  batch_id: string | null
+  alert_type: 'low_stock' | 'expired_soon' | 'expired' | 'depleted' | 'near_expiry'
+  threshold_value: number | null
+  current_value: number | null
+  expiry_date: string | null
+  message: string | null
+  is_resolved: boolean
+  resolved_by: string | null
+  resolved_at: string | null
+  created_at: string
+}
+
+export interface VaccineStockSummary {
+  vaccine_type_id: string
+  vaccine_name: string
+  target_species: string | null
+  min_stock_threshold: number
+  total_available: number
+  total_reserved: number
+  active_batches: number
+  earliest_expiry: string | null
+  stock_status: 'low' | 'normal'
+}
+
+export interface VaccineExpiryAlert {
+  batch_id: string
+  vaccine_name: string
+  batch_number: string
+  expiry_date: string
+  available_quantity: number
+  min_stock_threshold: number
+  expiry_status: 'expired' | 'expiring_soon' | 'ok'
 }

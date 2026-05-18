@@ -25,13 +25,19 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { is_active } = body
-
+    const { license_number, specialization, years_of_experience, biography, is_active } = body
     const { id } = await params
+
+    const updateData: any = {}
+    if (license_number !== undefined) updateData.license_number = license_number
+    if (specialization !== undefined) updateData.specialization = specialization
+    if (years_of_experience !== undefined) updateData.years_of_experience = years_of_experience
+    if (biography !== undefined) updateData.biography = biography
+    if (is_active !== undefined) updateData.is_active = Boolean(is_active)
 
     const { error } = await supabase
       .from('doctors')
-      .update({ is_active: Boolean(is_active) })
+      .update(updateData)
       .eq('id', id)
 
     if (error) {

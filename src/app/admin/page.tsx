@@ -26,6 +26,7 @@ import {
   RefreshCw,
   Filter,
   X,
+  Package,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -587,6 +588,9 @@ export default function AdminPage() {
 
             <button onClick={() => router.push('/admin/vaccinations')} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
               <Syringe className="h-4 w-4 text-green-600" /> Vaksinasi
+            </button>
+            <button onClick={() => router.push('/admin/vaccine-stock')} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
+              <Package className="h-4 w-4 text-teal-600" /> Stok Vaksin
             </button>
             <button onClick={() => router.push('/admin/treatments')} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
               <Stethoscope className="h-4 w-4 text-yellow-600" /> Pengobatan

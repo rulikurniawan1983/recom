@@ -7,10 +7,7 @@ export default async function AdminDoctorsPage() {
   const { data: { user } } = await supabase.auth.getUser()
 
   const { data: doctors } = await supabase.from('doctors')
-    .select(`
-      *,
-      profiles (full_name, email)
-    `)
+    .select('*')
     .order('created_at', { ascending: false })
 
   return (
