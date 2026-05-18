@@ -30,7 +30,6 @@ const navItems = [
 export default function VetDashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [showNotifications, setShowNotifications] = useState(false)
-  const [showServiceModal, setShowServiceModal] = useState(false)
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -117,12 +116,6 @@ export default function VetDashboardShell({ children }: { children: React.ReactN
         </main>
 
 
-
-        {/* Service Selection Modal */}
-        <ServiceSelectionModal
-          open={showServiceModal}
-          onOpenChange={setShowServiceModal}
-        />
       </div>
     )
   }
