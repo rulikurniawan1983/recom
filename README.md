@@ -1,6 +1,6 @@
 # SLIDER-VETSYS
 
-Ruli Kurniawan, S.)t
+Ruli Kurniawan, S.Pt
 
 Sistem manajemen kesehatan hewan peliharaan yang mencakup layanan vaksinasi, pengobatan, dan konsultasi, dengan alur kerja lengkap dari pendaftaran hewan hingga pengelolaan riwayat kesehatan dan layanan yang diterima.
 
