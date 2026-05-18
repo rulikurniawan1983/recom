@@ -13,13 +13,12 @@ import {
   Bell,
   PlusCircle,
   ClipboardList,
-  UserPlus,
 } from 'lucide-react'
 
 const navItems = [
   { href: '/dashboard', label: 'Beranda', icon: HeartPulse },
   { href: '/dashboard/pets', label: 'Hewan Saya', icon: HeartPulse },
-  { href: '/dashboard/doctors', label: 'Tambah Dokter', icon: UserPlus },
+
   { href: '/dashboard/vaccinations', label: 'Vaksinasi', icon: Syringe },
   { href: '/dashboard/treatments', label: 'Pengobatan', icon: Stethoscope },
   { href: '/dashboard/consultations', label: 'Konsultasi', icon: Video },
