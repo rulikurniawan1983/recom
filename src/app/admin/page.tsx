@@ -160,8 +160,18 @@ export default function AdminPage() {
   const [deleteUser, setDeleteUser] = useState<Profile | null>(null)
   const [deletingUser, setDeletingUser] = useState(false)
 
+  // ── Add doctor modal ──
+  const [addDoctorOpen, setAddDoctorOpen] = useState(false)
+  const [addingDoctor, setAddingDoctor] = useState(false)
+  const [newDoctor, setNewDoctor] = useState({
+    license_number: '',
+    specialization: '',
+    years_of_experience: '',
+    biography: '',
+  })
+
   // ── View mode ──
-  const [viewMode, setViewMode] = useState<'dashboard' | 'permohonan' | 'pengguna' | 'layanan' | 'analitik'>('dashboard')
+  const [viewMode, setViewMode] = useState<ViewMode>('dashboard')
 
   // ─────────────────────────────────────────────────────
   // Data fetch
@@ -196,6 +206,14 @@ export default function AdminPage() {
   const [vetRegs, setVetRegs] = useState<any[]>([])
   const [layananLoading, setLayananLoading] = useState(false)
 
+  // ── Tambah Dokter data ──
+  const [adminDoctors, setAdminDoctors] = useState<any[]>([])
+  const [doctorsLoading, setDoctorsLoading] = useState(false)
+
+  // ── Jadwal data ──
+  const [schedules, setSchedules] = useState<any[]>([])
+  const [schedulesLoading, setSchedulesLoading] = useState(false)
+
   // ── Analytics data ──
   const [analyticsData, setAnalyticsData] = useState<any>(null)
   const [analyticsLoading, setAnalyticsLoading] = useState(false)
@@ -214,6 +232,30 @@ export default function AdminPage() {
       if (vetRes.ok) { const v = await vetRes.json(); setVetRegs(Array.isArray(v) ? v : []) }
     } catch { /* silent */ }
     finally { setLayananLoading(false) }
+  }, [])
+
+  // ─────────────────────────────────────────────────────
+  // Tambah Dokter fetch
+  // ─────────────────────────────────────────────────────
+  const fetchAdminDoctors = useCallback(async () => {
+    setDoctorsLoading(true)
+    try {
+      const res = await fetch('/api/admin/doctors')
+      if (res.ok) { const d = await res.json(); setAdminDoctors(Array.isArray(d.doctors) ? d.doctors : []) }
+    } catch { /* silent */ }
+    finally { setDoctorsLoading(false) }
+  }, [])
+
+  // ─────────────────────────────────────────────────────
+  // Jadwal fetch
+  // ─────────────────────────────────────────────────────
+  const fetchSchedules = useCallback(async () => {
+    setSchedulesLoading(true)
+    try {
+      const res = await fetch('/api/admin/schedules')
+      if (res.ok) { const d = await res.json(); setSchedules(Array.isArray(d.schedules) ? d.schedules : []) }
+    } catch { /* silent */ }
+    finally { setSchedulesLoading(false) }
   }, [])
 
   // ─────────────────────────────────────────────────────
@@ -239,6 +281,8 @@ export default function AdminPage() {
   }, [anYear, anMonth])
 
   useEffect(() => { if (viewMode === 'layanan') fetchLayanan() }, [viewMode, fetchLayanan])
+  useEffect(() => { if (viewMode === 'tambah_dokter') fetchAdminDoctors() }, [viewMode, fetchAdminDoctors])
+  useEffect(() => { if (viewMode === 'jadwal') fetchSchedules() }, [viewMode, fetchSchedules])
   useEffect(() => { if (viewMode === 'analitik') fetchAnalytics() }, [viewMode, fetchAnalytics])
 
 
@@ -409,6 +453,31 @@ export default function AdminPage() {
   }
 
   const openDeleteUserModal = (user: Profile) => { setDeleteUser(user); setDeleteUserOpen(true) }
+
+  // — Add Doctor —
+  const handleAddDoctor = async () => {
+    if (!newDoctor.license_number.trim()) { alert('Nomor lisensi wajib diisi'); return }
+    setAddingDoctor(true)
+    try {
+      const res = await fetch('/api/admin/doctors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          license_number: newDoctor.license_number,
+          specialization: newDoctor.specialization || null,
+          years_of_experience: newDoctor.years_of_experience ? parseInt(newDoctor.years_of_experience) : null,
+          biography: newDoctor.biography || null,
+        }),
+      })
+      if (res.ok) {
+        setAddDoctorOpen(false)
+        setNewDoctor({ license_number: '', specialization: '', years_of_experience: '', biography: '' })
+        fetchAdminDoctors()
+        alert('Dokter berhasil ditambahkan')
+      } else { const err = await res.json(); alert(err.error || 'Gagal menambahkan dokter') }
+    } catch { alert('Terjadi kesalahan') }
+    finally { setAddingDoctor(false) }
+  }
 
   // ─────────────────────────────────────────────────────
   // View helpers
@@ -805,12 +874,14 @@ export default function AdminPage() {
   // ─────────────────────────────────────────────────────
   // Tabs
   // ─────────────────────────────────────────────────────
-  type ViewMode = 'dashboard' | 'permohonan' | 'pengguna' | 'layanan' | 'analitik'
+  type ViewMode = 'dashboard' | 'permohonan' | 'pengguna' | 'layanan' | 'tambah_dokter' | 'jadwal' | 'analitik'
   const tabs: { key: ViewMode; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { key: 'dashboard',  label: 'Dashboard',   icon: LayoutDashboard },
     { key: 'permohonan', label: 'Permohonan',  icon: FileText },
     { key: 'pengguna',   label: 'Pengguna',    icon: Users },
     { key: 'layanan',    label: 'Layanan',     icon: Syringe },
+    { key: 'tambah_dokter', label: 'Tambah Dokter', icon: Plus },
+    { key: 'jadwal',     label: 'Jadwal',      icon: Calendar },
     { key: 'analitik',   label: 'Analitik',    icon: BarChart3 },
   ]
 
@@ -1027,7 +1098,135 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* Analytics View */}
+          {/* Tambah Dokter View */}
+  {viewMode === 'tambah_dokter' && (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Tambah Dokter</h1>
+          <p className="text-gray-500 text-sm">Kelola data dokter hewan</p>
+        </div>
+        <Button size="sm" onClick={() => setAddDoctorOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+          <Plus className="h-4 w-4 mr-1.5" /> Tambah Dokter
+        </Button>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Daftar Dokter Hewan</CardTitle>
+          <CardDescription>Kelola dokter hewan yang terdaftar</CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          {doctorsLoading ? (
+            <div className="p-6 space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-10 bg-gray-100 rounded animate-pulse" />)}</div>
+          ) : adminDoctors.length === 0 ? (
+            <div className="p-10 text-center text-gray-500"><Syringe className="h-12 w-12 mx-auto mb-3 text-gray-300" /><p>Tidak ada dokter terdaftar</p></div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nama</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>No. Lisensi</TableHead>
+                    <TableHead>Spesialisasi</TableHead>
+                    <TableHead>Pengalaman</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {adminDoctors.map((doc: any) => (
+                    <TableRow key={doc.id} className="hover:bg-gray-50">
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 bg-blue-100 rounded-full flex items-center justify-center text-xs font-medium text-blue-600">
+                            {doc.profiles?.full_name?.charAt(0)?.toUpperCase() || 'D'}
+                          </div>
+                          <span className="font-medium text-sm">{doc.profiles?.full_name || 'Tanpa Nama'}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-600">{doc.profiles?.email || '-'}</TableCell>
+                      <TableCell className="text-sm font-mono">{doc.license_number || '-'}</TableCell>
+                      <TableCell className="text-sm">{doc.specialization || '-'}</TableCell>
+                      <TableCell className="text-sm">{doc.years_of_experience ? `${doc.years_of_experience} th` : '-'}</TableCell>
+                      <TableCell>
+                        <Badge className={doc.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                          {doc.is_active ? 'Aktif' : 'Nonaktif'}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )}
+
+  {/* Jadwal View */}
+  {viewMode === 'jadwal' && (
+    <div className="space-y-4">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Jadwal</h1>
+        <p className="text-gray-500 text-sm">Kelola jadwal pemeriksaan dan layanan</p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Semua Jadwal</CardTitle>
+          <CardDescription>Jadwal pemeriksaan dan kunjungan</CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          {schedulesLoading ? (
+            <div className="p-6 space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-10 bg-gray-100 rounded animate-pulse" />)}</div>
+          ) : schedules.length === 0 ? (
+            <div className="p-10 text-center text-gray-500"><Calendar className="h-12 w-12 mx-auto mb-3 text-gray-300" /><p>Tidak ada jadwal</p></div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Tanggal</TableHead>
+                    <TableHead>Jam</TableHead>
+                    <TableHead>Tipe</TableHead>
+                    <TableHead>No. Registrasi ID</TableHead>
+                    <TableHead>Lokasi</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Catatan</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {schedules.map((sched: any) => (
+                    <TableRow key={sched.id} className="hover:bg-gray-50">
+                      <TableCell className="font-medium text-sm">{sched.scheduled_date ? new Date(sched.scheduled_date).toLocaleDateString('id-ID') : '-'}</TableCell>
+                      <TableCell className="text-sm text-gray-600">{sched.scheduled_time || '-'}</TableCell>
+                      <TableCell className="text-sm">{sched.registration_type || '-'}</TableCell>
+                      <TableCell className="text-sm text-gray-600">{sched.registration_id?.slice(0, 8) || '-'}…</TableCell>
+                      <TableCell className="text-sm text-gray-600">{sched.location || '-'}</TableCell>
+                      <TableCell>
+                        <Badge className={
+                          sched.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
+                          sched.status === 'completed' ? 'bg-green-100 text-green-800' :
+                          'bg-red-100 text-red-800'
+                        }>
+                          {sched.status === 'scheduled' ? 'Dijadwalkan' : sched.status === 'completed' ? 'Selesai' : 'Dibatalkan'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-600">{sched.notes || '-'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )}
+
+  {/* Analytics View */}
           {viewMode === 'analitik' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -1103,6 +1302,41 @@ export default function AdminPage() {
         onConfirm={handleCreateUser}
         loading={creatingUser}
       />
+
+       {addDoctorOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-lg overflow-y-auto">
+            <div className="p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Tambah Dokter Baru</h2>
+              <p className="text-sm text-gray-500 mb-4">Nomor lisensi wajib diisi. Kolom lain opsional.</p>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Lisensi *</label>
+                  <Input value={newDoctor.license_number} onChange={e => setNewDoctor(p => ({ ...p, license_number: e.target.value }))} placeholder="Contoh: D-1234/SIP/2024" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Spesialisasi</label>
+                  <Input value={newDoctor.specialization} onChange={e => setNewDoctor(p => ({ ...p, specialization: e.target.value }))} placeholder="Contoh: Bedah Hewan" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Pengalaman (tahun)</label>
+                  <Input type="number" value={newDoctor.years_of_experience} onChange={e => setNewDoctor(p => ({ ...p, years_of_experience: e.target.value }))} placeholder="Contoh: 5" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Biografi</label>
+                  <textarea value={newDoctor.biography} onChange={e => setNewDoctor(p => ({ ...p, biography: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" rows={3} placeholder="Ceritakan pengalaman dan latar belakang dokter..." />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-4 mt-4">
+                <button onClick={() => setAddDoctorOpen(false)} disabled={addingDoctor} className="px-4 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-50" type="button">Batal</button>
+                <button onClick={handleAddDoctor} disabled={addingDoctor} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700">
+                  {addingDoctor ? 'Menyimpan...' : 'Simpan'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
        {showDetailModal && selectedReg && (
          <RegistrationDetailModal
