@@ -191,6 +191,56 @@ export default function AdminPage() {
   const [anYear, setAnYear] = useState<number>(new Date().getFullYear())
   const [anMonth, setAnMonth] = useState<string>('all')
 
+  // ── Layanan data ──
+  const [doctors, setDoctors] = useState<any[]>([])
+  const [vetRegs, setVetRegs] = useState<any[]>([])
+  const [layananLoading, setLayananLoading] = useState(false)
+
+  // ── Analytics data ──
+  const [analyticsData, setAnalyticsData] = useState<any>(null)
+  const [analyticsLoading, setAnalyticsLoading] = useState(false)
+
+  // ─────────────────────────────────────────────────────
+  // Layanan fetch
+  // ─────────────────────────────────────────────────────
+  const fetchLayanan = useCallback(async () => {
+    setLayananLoading(true)
+    try {
+      const [docsRes, vetRes] = await Promise.all([
+        fetch('/api/admin/doctors'),
+        fetch('/api/admin/veterinary-registrations'),
+      ])
+      if (docsRes.ok) { const d = await docsRes.json(); setDoctors(Array.isArray(d.doctors) ? d.doctors : []) }
+      if (vetRes.ok) { const v = await vetRes.json(); setVetRegs(Array.isArray(v) ? v : []) }
+    } catch { /* silent */ }
+    finally { setLayananLoading(false) }
+  }, [])
+
+  // ─────────────────────────────────────────────────────
+  // Analytics fetch
+  // ─────────────────────────────────────────────────────
+  const fetchAnalytics = useCallback(async () => {
+    setAnalyticsLoading(true)
+    try {
+      const params = new URLSearchParams({ year: String(anYear), month: anMonth })
+      const [regRes, vaccRes, treatRes, consultRes] = await Promise.all([
+        fetch(`/api/admin/analytics/registrations?${params}`),
+        fetch(`/api/admin/analytics/vaccinations?${params}`),
+        fetch(`/api/admin/analytics/treatments?${params}`),
+        fetch(`/api/admin/analytics/consultations?${params}`),
+      ])
+      const reg = regRes.ok ? await regRes.json() : { data: [] }
+      const vacc = vaccRes.ok ? await vaccRes.json() : { data: [] }
+      const treat = treatRes.ok ? await treatRes.json() : { data: [] }
+      const consult = consultRes.ok ? await consultRes.json() : { data: [] }
+      setAnalyticsData({ registrations: reg.data || [], vaccinations: vacc.data || [], treatments: treat.data || [], consultations: consult.data || [] })
+    } catch { /* silent */ }
+    finally { setAnalyticsLoading(false) }
+  }, [anYear, anMonth])
+
+  useEffect(() => { if (viewMode === 'layanan') fetchLayanan() }, [viewMode, fetchLayanan])
+  useEffect(() => { if (viewMode === 'analitik') fetchAnalytics() }, [viewMode, fetchAnalytics])
+
 
   // ─────────────────────────────────────────────────────
   // Stats
@@ -526,6 +576,233 @@ export default function AdminPage() {
   )
 
   // ─────────────────────────────────────────────────────
+  // Layanan sub-components
+  // ─────────────────────────────────────────────────────
+  const ServiceDoctorsTable = () => {
+    if (layananLoading) return <div className="p-6 space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-10 bg-gray-100 rounded animate-pulse" />)}</div>
+    if (doctors.length === 0) return <div className="p-10 text-center text-gray-500"><Syringe className="h-12 w-12 mx-auto mb-3 text-gray-300" /><p>Tidak ada dokter terdaftar</p></div>
+    return (
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nama</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>No. Lisensi</TableHead>
+              <TableHead>Spesialisasi</TableHead>
+              <TableHead>Pengalaman</TableHead>
+              <TableHead>Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {doctors.map((doc: any) => (
+              <TableRow key={doc.id} className="hover:bg-gray-50">
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 bg-blue-100 rounded-full flex items-center justify-center text-xs font-medium text-blue-600">
+                      {doc.profiles?.full_name?.charAt(0)?.toUpperCase() || 'D'}
+                    </div>
+                    <span className="font-medium text-sm">{doc.profiles?.full_name || 'Tanpa Nama'}</span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-sm text-gray-600">{doc.profiles?.email || '-'}</TableCell>
+                <TableCell className="text-sm font-mono">{doc.license_number || '-'}</TableCell>
+                <TableCell className="text-sm">{doc.specialization || '-'}</TableCell>
+                <TableCell className="text-sm">{doc.years_of_experience ? `${doc.years_of_experience} th` : '-'}</TableCell>
+                <TableCell>
+                  <Badge className={doc.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                    {doc.is_active ? 'Aktif' : 'Nonaktif'}
+                  </Badge>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    )
+  }
+
+  const VeterinaryRegsTable = () => {
+    if (layananLoading) return <div className="p-6 space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-10 bg-gray-100 rounded animate-pulse" />)}</div>
+    if (vetRegs.length === 0) return <div className="p-10 text-center text-gray-500"><FileText className="h-12 w-12 mx-auto mb-3 text-gray-300" /><p>Tidak ada registrasi veterinari</p></div>
+    return (
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>No. Registrasi</TableHead>
+              <TableHead>Pemilik</TableHead>
+              <TableHead>Hewan</TableHead>
+              <TableHead>Tanggal</TableHead>
+              <TableHead>Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {vetRegs.map((reg: any) => (
+              <TableRow key={reg.id} className="hover:bg-gray-50">
+                <TableCell className="font-medium text-sm font-mono">{reg.registration_number}</TableCell>
+                <TableCell className="text-sm">{reg.applicant_name || '-'}</TableCell>
+                <TableCell className="text-sm">{reg.pet_name || '-'}</TableCell>
+                <TableCell className="text-sm text-gray-600">{reg.created_at ? new Date(reg.created_at).toLocaleDateString('id-ID') : '-'}</TableCell>
+                <TableCell>
+                  <Badge className={STATUS_COLORS[reg.status as RegistrationStatus] || 'bg-gray-100 text-gray-800'}>
+                    {STATUS_LABELS[reg.status as RegistrationStatus] || reg.status}
+                  </Badge>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    )
+  }
+
+  // ─────────────────────────────────────────────────────
+  // Analytics sub-component
+  // ─────────────────────────────────────────────────────
+  const AnalyticsView = () => {
+    if (analyticsLoading) return <div className="p-6 space-y-3">{[...Array(4)].map((_, i) => <div key={i} className="h-16 bg-gray-100 rounded animate-pulse" />)}</div>
+    if (!analyticsData) return <div className="p-10 text-center text-gray-500"><BarChart3 className="h-12 w-12 mx-auto mb-3 text-gray-300" /><p>Tidak ada data analitik</p></div>
+
+    const { registrations, vaccinations, treatments, consultations } = analyticsData
+    const totalRegs = registrations.length
+    const totalVacc = vaccinations.length
+    const totalTreat = treatments.length
+    const totalConsult = consultations.length
+
+    const regByStatus: Record<string, number> = {}
+    registrations.forEach((r: any) => { regByStatus[r.status] = (regByStatus[r.status] || 0) + 1 })
+    const vaccByStatus: Record<string, number> = {}
+    vaccinations.forEach((v: any) => { vaccByStatus[v.status] = (vaccByStatus[v.status] || 0) + 1 })
+    const treatByStatus: Record<string, number> = {}
+    treatments.forEach((t: any) => { treatByStatus[t.status] = (treatByStatus[t.status] || 0) + 1 })
+    const consultByStatus: Record<string, number> = {}
+    consultations.forEach((c: any) => { consultByStatus[c.status] = (consultByStatus[c.status] || 0) + 1 })
+
+    return (
+      <div className="space-y-6">
+        {/* Summary cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="border-l-4 border-l-blue-500">
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-gray-600">Total Registrasi</CardTitle></CardHeader>
+            <CardContent><div className="text-2xl font-bold text-gray-900">{totalRegs}</div></CardContent>
+          </Card>
+          <Card className="border-l-4 border-l-green-500">
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-gray-600">Total Vaksinasi</CardTitle></CardHeader>
+            <CardContent><div className="text-2xl font-bold text-gray-900">{totalVacc}</div></CardContent>
+          </Card>
+          <Card className="border-l-4 border-l-purple-500">
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-gray-600">Total Pengobatan</CardTitle></CardHeader>
+            <CardContent><div className="text-2xl font-bold text-gray-900">{totalTreat}</div></CardContent>
+          </Card>
+          <Card className="border-l-4 border-l-amber-500">
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-gray-600">Total Konsultasi</CardTitle></CardHeader>
+            <CardContent><div className="text-2xl font-bold text-gray-900">{totalConsult}</div></CardContent>
+          </Card>
+        </div>
+
+        {/* Registrations breakdown */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card>
+            <CardHeader><CardTitle className="text-base">Registrasi per Status</CardTitle></CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {Object.entries(regByStatus).map(([status, count]) => (
+                  <div key={status} className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">{STATUS_LABELS[status as RegistrationStatus] || status}</span>
+                    <Badge className={STATUS_COLORS[status as RegistrationStatus] || 'bg-gray-100 text-gray-800'}>{count as number}</Badge>
+                  </div>
+                ))}
+                {Object.keys(regByStatus).length === 0 && <p className="text-sm text-gray-400">Tidak ada data</p>}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader><CardTitle className="text-base">Vaksinasi per Status</CardTitle></CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {Object.entries(vaccByStatus).map(([status, count]) => (
+                  <div key={status} className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">{status}</span>
+                    <Badge variant="outline">{count as number}</Badge>
+                  </div>
+                ))}
+                {Object.keys(vaccByStatus).length === 0 && <p className="text-sm text-gray-400">Tidak ada data</p>}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader><CardTitle className="text-base">Pengobatan per Status</CardTitle></CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {Object.entries(treatByStatus).map(([status, count]) => (
+                  <div key={status} className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">{status}</span>
+                    <Badge variant="outline">{count as number}</Badge>
+                  </div>
+                ))}
+                {Object.keys(treatByStatus).length === 0 && <p className="text-sm text-gray-400">Tidak ada data</p>}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader><CardTitle className="text-base">Konsultasi per Status</CardTitle></CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {Object.entries(consultByStatus).map(([status, count]) => (
+                  <div key={status} className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">{status}</span>
+                    <Badge variant="outline">{count as number}</Badge>
+                  </div>
+                ))}
+                {Object.keys(consultByStatus).length === 0 && <p className="text-sm text-gray-400">Tidak ada data</p>}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent registrations table */}
+        <Card>
+          <CardHeader><CardTitle className="text-base">Registrasi Terbaru</CardTitle></CardHeader>
+          <CardContent className="p-0">
+            {registrations.length === 0 ? (
+              <div className="p-10 text-center text-gray-500"><p>Tidak ada registrasi</p></div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>No. Registrasi</TableHead>
+                      <TableHead>Jenis</TableHead>
+                      <TableHead>Pemohon</TableHead>
+                      <TableHead>Tanggal</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {registrations.slice(0, 10).map((reg: any) => (
+                      <TableRow key={reg.id} className="hover:bg-gray-50">
+                        <TableCell className="font-medium text-sm font-mono">{reg.registration_number}</TableCell>
+                        <TableCell>{getTypeBadge(reg.type)}</TableCell>
+                        <TableCell className="text-sm">{reg.profiles?.full_name || '-'}</TableCell>
+                        <TableCell className="text-sm text-gray-600">{reg.created_at ? new Date(reg.created_at).toLocaleDateString('id-ID') : '-'}</TableCell>
+                        <TableCell><Badge className={STATUS_COLORS[reg.status as RegistrationStatus] || 'bg-gray-100 text-gray-800'}>{STATUS_LABELS[reg.status as RegistrationStatus] || reg.status}</Badge></TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // ─────────────────────────────────────────────────────
   // Tabs
   // ─────────────────────────────────────────────────────
   type ViewMode = 'dashboard' | 'permohonan' | 'pengguna' | 'layanan' | 'analitik'
@@ -702,6 +979,75 @@ export default function AdminPage() {
               </Card>
 
               {renderUsersTable()}
+            </div>
+          )}
+
+          {/* Services View */}
+          {viewMode === 'layanan' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">Layanan</h1>
+                  <p className="text-gray-500 text-sm">Kelola layanan dan dokter hewan</p>
+                </div>
+              </div>
+
+              {/* Doctors Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Dokter Hewan</CardTitle>
+                  <CardDescription>Daftar dokter hewan yang terdaftar</CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <ServiceDoctorsTable />
+                </CardContent>
+              </Card>
+
+              {/* Veterinary Registrations */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Registrasi Veterinari</CardTitle>
+                  <CardDescription>Permohonan registrasi layanan kesehatan hewan</CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <VeterinaryRegsTable />
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Analytics View */}
+          {viewMode === 'analitik' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">Analitik</h1>
+                  <p className="text-gray-500 text-sm">Statistik dan laporan</p>
+                </div>
+                <div className="flex gap-2">
+                  <select
+                    value={anYear}
+                    onChange={e => setAnYear(Number(e.target.value))}
+                    className="px-3 py-2 border border-gray-300 rounded-md text-sm bg-white"
+                  >
+                    {[2024, 2025, 2026].map(y => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={anMonth}
+                    onChange={e => setAnMonth(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-md text-sm bg-white"
+                  >
+                    <option value="all">Semua Bulan</option>
+                    {['01','02','03','04','05','06','07','08','09','10','11','12'].map(m => (
+                      <option key={m} value={m}>{new Date(2026, Number(m)-1, 1).toLocaleDateString('id-ID',{month:'long'})}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <AnalyticsView />
             </div>
           )}
         </div>
