@@ -3,12 +3,7 @@
 import { Edit, Trash2, Syringe, Stethoscope, Video, Heart } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { supabase } from '@/lib/supabase'
 
 interface Pet {
   id: string
@@ -47,7 +42,7 @@ export default function PetGrid({ pets }: PetGridProps) {
     return parts.join(' ') || '0 bulan'
   }
 
-const getActiveCount = (items: any[] | null) => {
+const getActiveCount = (items: { id: string; status: string }[] | null) => {
   if (!items) return 0
   return items.filter(i => i.status === 'pending' || i.status === 'confirmed').length
 }

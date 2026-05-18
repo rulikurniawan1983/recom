@@ -71,16 +71,15 @@ export async function GET(
       .single()
 
     if (dokterReg) {
-      // Try fetch from registration_documents first
-      const { data: docs, error } = await serviceSupabase
+      const { data: docs } = await serviceSupabase
         .from('registration_documents')
         .select('id, document_type, file_url, file_name, status, admin_notes, verified_at, uploaded_at')
         .eq('registration_id', id)
         .eq('registration_type', 'dokter_hewan')
         .order('uploaded_at', { ascending: true })
 
-      if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+      if (docs && docs.length > 0) {
+        return NextResponse.json(docs)
       }
 
       // If records exist in registration_documents, return them
@@ -88,7 +87,7 @@ export async function GET(
         return NextResponse.json(docs)
       }
 
-      // Fallback: read from dokter_hewan_registrations columns (for legacy data)
+      // Fallback: read from dokter_hewan_registrations columns
       const { data: reg } = await serviceSupabase
         .from('dokter_hewan_registrations')
         .select(`
@@ -125,6 +124,28 @@ export async function GET(
         }))
 
       return NextResponse.json(fallbackDocs)
+    }
+
+    // Try Veterinary registration
+    const { data: vetReg } = await serviceSupabase
+      .from('veterinary_registrations')
+      .select('id')
+      .eq('id', id)
+      .single()
+
+    if (vetReg) {
+      const { data: docs, error } = await serviceSupabase
+        .from('registration_documents')
+        .select('id, document_type, file_url, file_name, status, admin_notes, verified_at, uploaded_at')
+        .eq('registration_id', id)
+        .eq('registration_type', 'veterinary')
+        .order('uploaded_at', { ascending: true })
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+
+      return NextResponse.json(docs || [])
     }
 
     return NextResponse.json({ error: 'Registration not found' }, { status: 404 })

@@ -57,9 +57,9 @@ export default async function VaccinationsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold text-gray-900">Vaksinasi Rabies</h2>
-            <p className="text-gray-500 mt-1">Kelola jadwal vaksinasi untuk hewan peliharaan Anda</p>
+            <p className="text-gray-500 mt-1">Kelola jadwal vaksinasi untuk hewan peliharaan Anda. Pilih hewan, dokter, dan jadwal untuk melakukan booking.</p>
           </div>
-          <BookVaccinationButton pets={pets || []} />
+          <BookVaccinationButton pets={pets || []} userId={user.id} />
         </div>
 
         {!pets || pets.length === 0 ? (
@@ -83,7 +83,7 @@ export default async function VaccinationsPage() {
             </a>
           </div>
         ) : (
-          <VaccinationList vaccinations={vaccinations || []} pets={pets} />
+          <VaccinationList vaccinations={vaccinations || []} pets={pets || []} />
         )}
       </div>
     </VetDashboardShell>

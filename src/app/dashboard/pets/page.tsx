@@ -59,7 +59,7 @@ export default async function PetsPage() {
             <h2 className="text-3xl font-bold text-gray-900">Hewan Peliharaan</h2>
             <p className="text-gray-500 mt-1">Kelola data hewan peliharaan Anda</p>
           </div>
-          <AddPetButton />
+          <AddPetButton userId={user.id} />
         </div>
 
         <PetGrid pets={pets || []} />

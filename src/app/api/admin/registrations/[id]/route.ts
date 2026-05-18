@@ -106,6 +106,37 @@ export async function GET(
       })
     }
 
+    // Try Veterinary (Pelayanan Kesehatan Hewan)
+    let { data: vetReg, error: vetError } = await supabase
+      .from('veterinary_registrations')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (vetError) {
+      console.error('Veterinary query error:', vetError)
+      if (vetError.code !== 'PGRST116') {
+        return NextResponse.json(
+          { error: 'Failed to query Veterinary registrations', details: vetError.message },
+          { status: 500 }
+        )
+      }
+    }
+
+    if (vetReg) {
+      console.log('Found in Veterinary table')
+      const { data: docs } = await supabase
+        .from('registration_documents')
+        .select('*')
+        .eq('registration_id', id)
+        .eq('registration_type', 'veterinary')
+      return NextResponse.json({
+        ...vetReg,
+        regType: 'Veterinary',
+        documents: docs || []
+      })
+    }
+
     console.log(`Registration not found for id: ${id}`)
     return NextResponse.json({ error: 'Registration not found' }, { status: 404 })
   } catch (error) {
@@ -149,7 +180,7 @@ export async function DELETE(
       auth: { autoRefreshToken: false, persistSession: false }
     })
 
-    // Check if registration exists in either table
+    // Check if registration exists in any of the three tables
     const { data: nkvReg } = await serviceSupabase
       .from('nkv_registrations')
       .select('id')
@@ -162,10 +193,17 @@ export async function DELETE(
       .eq('id', id)
       .single()
 
+    const { data: vetReg } = await serviceSupabase
+      .from('veterinary_registrations')
+      .select('id')
+      .eq('id', id)
+      .single()
+
     const isNKV = !!nkvReg
     const isDokterHewan = !!dokterReg
+    const isVeterinary = !!vetReg
 
-    if (!isNKV && !isDokterHewan) {
+    if (!isNKV && !isDokterHewan && !isVeterinary) {
       return NextResponse.json({ error: 'Registration not found' }, { status: 404 })
     }
 
@@ -175,11 +213,14 @@ export async function DELETE(
       .delete()
       .eq('registration_id', id)
 
-    // Delete registration - ON DELETE CASCADE will automatically remove:
-    // - tracking_logs (via dual FK cascade)
-    // - inspection_schedules (via dual FK cascade)
-    // - registration_comments (via dual FK cascade)
-    const tableName = isNKV ? 'nkv_registrations' : 'dokter_hewan_registrations'
+    // Delete registration — ON DELETE CASCADE will automatically remove:
+    // - tracking_logs
+    // - inspection_schedules
+    // - registration_comments
+    let tableName: string
+    if (isNKV) tableName = 'nkv_registrations'
+    else if (isDokterHewan) tableName = 'dokter_hewan_registrations'
+    else tableName = 'veterinary_registrations'
 
     const { error: deleteError } = await serviceSupabase
       .from(tableName)

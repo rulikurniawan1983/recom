@@ -2,19 +2,15 @@
 
 import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { supabase } from '@/lib/supabase'
 
 interface AddPetModalProps {
   isOpen: boolean
   onClose: () => void
+  userId: string
 }
 
-export default function AddPetModal({ isOpen, onClose }: AddPetModalProps) {
+export default function AddPetModal({ isOpen, onClose, userId }: AddPetModalProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [formData, setFormData] = useState({
@@ -76,18 +72,10 @@ export default function AddPetModal({ isOpen, onClose }: AddPetModalProps) {
     setError('')
 
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-
-      if (!user) {
-        setError('Anda harus login terlebih dahulu')
-        setLoading(false)
-        return
-      }
-
       const { error } = await supabase
         .from('pets')
         .insert({
-          user_id: user.id,
+          user_id: userId,
           name: formData.name,
           species: formData.species,
           breed: formData.breed || null,

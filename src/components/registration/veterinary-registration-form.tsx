@@ -322,6 +322,7 @@ export default function VeterinaryRegistrationForm() {
                   <option value="">Pilih jenis kelamin</option>
                   <option value="jantan">Jantan</option>
                   <option value="betina">Betina</option>
+                  <option value="lainnya">Lainnya</option>
                 </select>
               </div>
             </CardContent>

@@ -320,7 +320,7 @@ export default function RegistrationDetailModal({
   const canDelete = effectiveStatus === 'draft';
   const canResubmit = effectiveStatus === 'revision_requested';
   const hasDocs = (reg: Registration) =>
-    reg.type === 'NKV' || reg.type === 'Veterinary'
+    (reg.type === 'NKV' || reg.type === 'Veterinary')
       ? !!(reg as NKVRegistration).recommendation_file_url
       : !!(reg as DokterHewanRegistration).color_photo_url ||
         !!(reg as DokterHewanRegistration).diploma_url ||
@@ -389,10 +389,11 @@ export default function RegistrationDetailModal({
     setLoading(true);
     setError(null);
     try {
-      const endpoint = registration.type === 'NKV' || registration.type === 'Dokter Hewan'
-        ? `${registration.type === 'NKV' ? '/api/nkv' : '/api/dokter-hewan'}/${registration.id}`
-        : '';
-      if (!endpoint) { setLoading(false); return; }
+      const endpoint = registration.type === 'NKV'
+        ? `/api/nkv/${registration.id}`
+        : registration.type === 'Dokter Hewan'
+          ? `/api/dokter-hewan/${registration.id}`
+          : `/api/veterinary/${registration.id}`;
       const response = await fetch(endpoint, { method: 'DELETE' });
       if (response.ok) { await onDelete(registration.id); onClose(); }
       else { const errorData = await response.json(); setError(errorData.error || 'Gagal menghapus'); setLoading(false); }

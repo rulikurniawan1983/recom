@@ -29,7 +29,7 @@ export async function GET() {
       )
     }
 
-    const [nkvResult, dokterResult] = await Promise.all([
+    const [nkvResult, dokterResult, vetResult] = await Promise.all([
       supabase
         .from('nkv_registrations')
         .select(`
@@ -53,11 +53,25 @@ export async function GET() {
           email,
           phone
         `)
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('veterinary_registrations')
+        .select(`
+          id,
+          registration_number,
+          status,
+          created_at,
+          owner_name,
+          owner_phone,
+          pet_name,
+          user_id
+        `)
+        .order('created_at', { ascending: false }),
     ])
 
     const nkvRegs = nkvResult.data || []
     const dokterRegs = dokterResult.data || []
+    const vetRegs = vetResult.data || []
 
     const combined = [
       ...nkvRegs.map(reg => ({
@@ -79,6 +93,16 @@ export async function GET() {
         applicant_name: reg.full_name || 'N/A',
         email: reg.email || 'N/A',
         phone: reg.phone || 'N/A'
+      })),
+      ...vetRegs.map(reg => ({
+        id: reg.id,
+        registration_number: reg.registration_number,
+        status: reg.status,
+        created_at: reg.created_at,
+        type: 'Veterinary',
+        applicant_name: reg.owner_name || reg.pet_name || 'N/A',
+        email: 'N/A',
+        phone: reg.owner_phone || 'N/A'
       }))
     ]
 

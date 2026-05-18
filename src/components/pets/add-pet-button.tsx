@@ -4,7 +4,11 @@ import { Plus } from 'lucide-react'
 import { useState } from 'react'
 import AddPetModal from '@/components/pets/add-pet-modal'
 
-export default function AddPetButton() {
+interface AddPetButtonProps {
+  userId: string
+}
+
+export default function AddPetButton({ userId }: AddPetButtonProps) {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
@@ -17,7 +21,7 @@ export default function AddPetButton() {
         Tambah Hewan
       </button>
 
-      <AddPetModal isOpen={isOpen} onClose={() => setIsOpen(false)} />
+      <AddPetModal isOpen={isOpen} onClose={() => setIsOpen(false)} userId={userId} />
     </>
   )
 }

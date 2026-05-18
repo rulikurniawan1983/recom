@@ -71,42 +71,86 @@ export async function PATCH(
     }
 
 // If all documents approved, move to document_verification
-     if (newStatus === 'approved') {
-       const { data: docs } = await serviceSupabase
-         .from('registration_documents')
-         .select('status')
-         .eq('registration_id', id)
+      if (newStatus === 'approved') {
+        const { data: docs } = await serviceSupabase
+          .from('registration_documents')
+          .select('status')
+          .eq('registration_id', id)
 
-       const allApproved = docs && docs.every(doc => doc.status === 'approved')
+        const allApproved = docs && docs.every(doc => doc.status === 'approved')
 
-       if (allApproved) {
-         // Determine registration type
-         const { data: nkvCheck } = await serviceSupabase
-           .from('nkv_registrations')
-           .select('id')
-           .eq('id', id)
-           .single()
+        if (allApproved) {
+          // Determine registration type -- check all three tables
+          const { data: nkvCheck } = await serviceSupabase
+            .from('nkv_registrations')
+            .select('id')
+            .eq('id', id)
+            .single()
 
-         const isNKV = !!nkvCheck
-         const tableName = isNKV ? 'nkv_registrations' : 'dokter_hewan_registrations'
+          const { data: dokterCheck } = await serviceSupabase
+            .from('dokter_hewan_registrations')
+            .select('id')
+            .eq('id', id)
+            .single()
 
-         await serviceSupabase
-           .from(tableName)
-           .update({ status: 'document_verification' })
-           .eq('id', id)
+          const { data: vetCheck } = await serviceSupabase
+            .from('veterinary_registrations')
+            .select('id')
+            .eq('id', id)
+            .single()
 
-         // Add tracking log
-         await serviceSupabase.from('tracking_logs').insert({
-           nkv_registration_id: isNKV ? id : null,
-           dokter_hewan_registration_id: isNKV ? null : id,
-           registration_type: isNKV ? 'NKV' : 'Dokter Hewan',
-           status: 'document_verification',
-           notes: 'Semua dokumen telah diverifikasi dan disetujui',
-           created_by: user.id,
-           created_at: new Date().toISOString()
-         })
-       }
-     }
+          const isNKV = !!nkvCheck
+          const isDokterHewan = !!dokterCheck
+          const isVeterinary = !!vetCheck
+
+          if (isNKV) {
+            await serviceSupabase
+              .from('nkv_registrations')
+              .update({ status: 'document_verification' })
+              .eq('id', id)
+            await serviceSupabase.from('tracking_logs').insert({
+              nkv_registration_id: id,
+              dokter_hewan_registration_id: null,
+              veterinary_registration_id: null,
+              registration_type: 'NKV',
+              status: 'document_verification',
+              notes: 'Semua dokumen telah diverifikasi dan disetujui',
+              created_by: user.id,
+              created_at: new Date().toISOString()
+            })
+          } else if (isDokterHewan) {
+            await serviceSupabase
+              .from('dokter_hewan_registrations')
+              .update({ status: 'document_verification' })
+              .eq('id', id)
+            await serviceSupabase.from('tracking_logs').insert({
+              nkv_registration_id: null,
+              dokter_hewan_registration_id: id,
+              veterinary_registration_id: null,
+              registration_type: 'Dokter Hewan',
+              status: 'document_verification',
+              notes: 'Semua dokumen telah diverifikasi dan disetujui',
+              created_by: user.id,
+              created_at: new Date().toISOString()
+            })
+          } else if (isVeterinary) {
+            await serviceSupabase
+              .from('veterinary_registrations')
+              .update({ status: 'document_verification' })
+              .eq('id', id)
+            await serviceSupabase.from('tracking_logs').insert({
+              nkv_registration_id: null,
+              dokter_hewan_registration_id: null,
+              veterinary_registration_id: id,
+              registration_type: 'Veterinary',
+              status: 'document_verification',
+              notes: 'Semua dokumen telah diverifikasi dan disetujui',
+              created_by: user.id,
+              created_at: new Date().toISOString()
+            })
+          }
+        }
+      }
 
     return NextResponse.json({ success: true })
   } catch (error) {

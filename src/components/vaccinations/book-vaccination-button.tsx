@@ -11,9 +11,8 @@ interface Pet {
   breed: string | null
 }
 
-export default function BookVaccinationButton({ pets }: { pets: Pet[] }) {
+export default function BookVaccinationButton({ pets, userId }: { pets: Pet[]; userId: string }) {
   const [isOpen, setIsOpen] = useState(false)
-
   if (pets.length === 0) return null
 
   return (
@@ -30,6 +29,8 @@ export default function BookVaccinationButton({ pets }: { pets: Pet[] }) {
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         pets={pets}
+        userId={userId}
+        onBookingComplete={() => window.location.reload()}
       />
     </>
   )

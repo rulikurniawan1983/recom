@@ -33,7 +33,7 @@ export default async function ConsultationsPage() {
             <h2 className="text-3xl font-bold text-gray-900">Konsultasi</h2>
             <p className="text-gray-500 mt-1">Kelua jadwal konsultasi online atau offline dengan dokter</p>
           </div>
-          <BookConsultationButton pets={pets || []} />
+          <BookConsultationButton pets={pets || []} userId={user.id} />
         </div>
 
         {!pets || pets.length === 0 ? (

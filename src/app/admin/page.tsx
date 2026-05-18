@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import {
   BarChart3,
+  Activity,
   CheckCircle,
   Clock,
   XCircle,
@@ -109,6 +110,7 @@ const STATUS_COLORS: Record<RegistrationStatus, string> = {
 const TYPE_COLORS: Record<string, string> = {
   'NKV': 'bg-blue-50 text-blue-700 border-blue-200',
   'Dokter Hewan': 'bg-green-50 text-green-700 border-green-200',
+  'Veterinary': 'bg-amber-50 text-amber-700 border-amber-200',
 };
 
 export default function AdminPage() {
@@ -120,7 +122,7 @@ export default function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<RegistrationStatus | 'all'>('all');
-  const [typeFilter, setTypeFilter] = useState<'all' | 'NKV' | 'Dokter Hewan'>('all');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'NKV' | 'Dokter Hewan' | 'Veterinary'>('all');
   const [viewMode, setViewMode] = useState<'dashboard' | 'applications' | 'users' | 'verification' | 'vaccinations' | 'treatments' | 'consultations' | 'doctors'>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedReg, setSelectedReg] = useState<AdminRegistration | null>(null);
@@ -179,6 +181,34 @@ export default function AdminPage() {
   const [deletingUser, setDeletingUser] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
 
+  // Daily service stats
+  interface DailyStats {
+    date: string
+    today: {
+      vaccinations_created: number
+      treatments_created: number
+      consultations_created: number
+      vaccinations_completed: number
+      treatments_completed: number
+      consultations_completed: number
+    }
+    totals: {
+      vaccinations: number
+      treatments: number
+      consultations: number
+      active_pets: number
+      active_doctors: number
+    }
+    schedules: {
+      vaccinations: any[]
+      treatments: any[]
+      consultations: any[]
+    }
+  }
+  const [dailyStats, setDailyStats] = useState<DailyStats | null>(null)
+  const [loadingDailyStats, setLoadingDailyStats] = useState(true)
+
+
    // Stats calculation
    const stats = useMemo(() => {
      const total = registrations.length;
@@ -191,27 +221,29 @@ export default function AdminPage() {
      const rejected = registrations.filter(r => r.status === 'rejected' || r.status === 'revision_requested').length;
      const revisionRequested = registrations.filter(r => r.status === 'revision_requested').length;
      
-     // Service-specific counts
-     const veterinaryHealth = registrations.filter(r => r.type === 'NKV' || r.type === 'Dokter Hewan').length;
-     const nkvService = registrations.filter(r => r.type === 'NKV').length;
-     const practiceRecommendation = registrations.filter(r => r.type === 'Dokter Hewan').length;
-     
-     return {
-       total,
-       draft,
-       submitted,
-       documentVerification,
-       fieldInspection,
-       assessment,
-       approved,
-       rejected,
-       revisionRequested,
-       inProgress: documentVerification + fieldInspection + assessment,
-       needsAction: submitted + documentVerification + revisionRequested,
-       veterinaryHealth,
-       nkvService,
-       practiceRecommendation
-     };
+      // Service-specific counts
+      const petHealthService = registrations.filter(r => r.type === 'NKV' || r.type === 'Dokter Hewan' || r.type === 'Veterinary').length;
+      const nkvService = registrations.filter(r => r.type === 'NKV').length;
+      const practiceRecommendation = registrations.filter(r => r.type === 'Dokter Hewan').length;
+      const veterinaryService = registrations.filter(r => r.type === 'Veterinary').length;
+      
+      return {
+        total,
+        draft,
+        submitted,
+        documentVerification,
+        fieldInspection,
+        assessment,
+        approved,
+        rejected,
+        revisionRequested,
+        inProgress: documentVerification + fieldInspection + assessment,
+        needsAction: submitted + documentVerification + revisionRequested,
+        petHealthService,
+        nkvService,
+        practiceRecommendation,
+        veterinaryService
+      };
    }, [registrations]);
 
    const filteredRegistrations = useMemo(() => {
@@ -245,68 +277,63 @@ export default function AdminPage() {
   const [submitting, setSubmitting] = useState(false);
 
    const fetchData = useCallback(async () => {
-     // Defer state updates to avoid synchronous setState in effect
-     await new Promise(resolve => setTimeout(resolve, 0));
-     setLoading(true);
-     setError(null);
-      try {
-        const [regRes, userRes, usersRes, vetRes] = await Promise.all([
-          fetch('/api/admin/applications'),
-          fetch('/api/admin/whoami'),
-          fetch('/api/admin/users'),
-          fetch('/api/admin/veterinary-registrations')
-        ]);
+      // Defer state updates to avoid synchronous setState in effect
+      await new Promise(resolve => setTimeout(resolve, 0));
+      setLoading(true);
+      setError(null);
+       try {
+         const [regRes, userRes, usersRes] = await Promise.all([
+           fetch('/api/admin/applications'),
+           fetch('/api/admin/whoami'),
+           fetch('/api/admin/users'),
+         ]);
 
-        let regData = [];
-        if (regRes.ok) {
-          regData = await regRes.json();
-          console.log('Fetched registrations from API:', regData);
-          setRegistrations(Array.isArray(regData) ? regData : []);
-        } else {
-          setError('Gagal memuat data permohonan');
-        }
+         if (regRes.ok) {
+           const regData = await regRes.json();
+           console.log('Fetched registrations from API:', regData);
+           setRegistrations(Array.isArray(regData) ? regData : []);
+         } else {
+           setError('Gagal memuat data permohonan');
+         }
 
        if (userRes.ok) {
          const userData = await userRes.json();
          setUserEmail(userData.user?.email || 'Admin');
        }
 
-       if (usersRes.ok) {
-         const usersData = await usersRes.json();
-         setUsers(Array.isArray(usersData.users) ? usersData.users : []);
-       }
-       
-       // Process veterinary registrations data
-       if (vetRes.ok) {
-         const vetData = await vetRes.json();
-         console.log('Fetched veterinary registrations from API:', vetData);
-         
-         // Convert veterinary registrations to AdminRegistration format and merge with existing registrations
-         const vetRegistrations: AdminRegistration[] = Array.isArray(vetData) ? vetData : [];
-         const currentRegistrations = Array.isArray(regData) ? regData : [];
-         
-         // Merge and deduplicate by id
-         const allRegistrations = [...currentRegistrations];
-         vetRegistrations.forEach(vetReg => {
-           if (!allRegistrations.some(reg => reg.id === vetReg.id)) {
-             allRegistrations.push(vetReg);
-           }
-         });
-         
-         setRegistrations(allRegistrations);
-       }
-     } catch {
+        if (usersRes.ok) {
+          const usersData = await usersRes.json();
+          setUsers(Array.isArray(usersData.users) ? usersData.users : []);
+        }
+      } catch {
        setError('Tidak dapat terhubung ke server');
      } finally {
        setLoading(false);
      }
    }, []); // end useCallback fetchData
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    useEffect(() => {
+     fetchData();
+   }, [fetchData]);
 
-  const fetchDocuments = async (reg: AdminRegistration) => {
+   // Fetch daily service stats
+   useEffect(() => {
+     let cancelled = false
+     const fetchDailyStats = async () => {
+       try {
+         const res = await fetch('/api/admin/daily-stats')
+         if (res.ok) {
+           const data = await res.json()
+           if (!cancelled) setDailyStats(data)
+         }
+       } catch { /* silently ignore daily-stats errors */ }
+       if (!cancelled) setLoadingDailyStats(false)
+     }
+     fetchDailyStats()
+     return () => { cancelled = true }
+   }, [])
+
+   const fetchDocuments = async (reg: AdminRegistration) => {
     setLoadingDocs(true);
     try {
       const res = await fetch(`/api/admin/registrations/${reg.id}/documents`);
@@ -462,12 +489,14 @@ export default function AdminPage() {
              throw new Error('Data tidak valid');
            }
 
-           let fullReg: Registration | null = null;
-           if (data.regType === 'NKV') {
-             fullReg = { ...data, type: 'NKV' as const };
-           } else if (data.regType === 'Dokter Hewan') {
-             fullReg = { ...data, type: 'Dokter Hewan' as const };
-           }
+            let fullReg: Registration | null = null;
+            if (data.regType === 'NKV') {
+              fullReg = { ...data, type: 'NKV' as const };
+            } else if (data.regType === 'Dokter Hewan') {
+              fullReg = { ...data, type: 'Dokter Hewan' as const };
+            } else if (data.regType === 'Veterinary') {
+              fullReg = { ...data, type: 'Veterinary' as const };
+            }
 
            if (fullReg) {
              setDetailReg(fullReg);
@@ -860,9 +889,65 @@ export default function AdminPage() {
                  <p className="text-gray-600 mt-1">
                    Ringkasan sistem rekomendasi online
                  </p>
-               </div>
+                </div>
 
-               {/* Stats Grid */}
+                {/* ── Daily Service Stats ── */}
+                {!loadingDailyStats && dailyStats && (
+                  <div className="mb-8">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      <Activity className="h-5 w-5 text-blue-600" />
+                      Statistik Layanan Hari Ini — {new Date(dailyStats.date + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {/* Vaccinations Today */}
+                      <Card>
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                          <CardTitle className="text-sm font-medium text-green-600">Vaksinasi Rabies</CardTitle>
+                          <Syringe className="h-4 w-4 text-green-600" />
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold text-gray-900">{dailyStats.today.vaccinations_created}</div>
+                          <p className="text-xs text-gray-500 mt-1">Booking baru hari ini</p>
+                          {dailyStats.today.vaccinations_completed > 0 && (
+                            <p className="text-xs text-green-600 mt-1">{dailyStats.today.vaccinations_completed} diselesaikan</p>
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      {/* Treatments Today */}
+                      <Card>
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                          <CardTitle className="text-sm font-medium text-yellow-600">Pengobatan Hewan</CardTitle>
+                          <Stethoscope className="h-4 w-4 text-yellow-600" />
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold text-gray-900">{dailyStats.today.treatments_created}</div>
+                          <p className="text-xs text-gray-500 mt-1">Booking baru hari ini</p>
+                          {dailyStats.today.treatments_completed > 0 && (
+                            <p className="text-xs text-green-600 mt-1">{dailyStats.today.treatments_completed} diselesaikan</p>
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      {/* Consultations Today */}
+                      <Card>
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                          <CardTitle className="text-sm font-medium text-purple-600">Konsultasi</CardTitle>
+                          <Video className="h-4 w-4 text-purple-600" />
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold text-gray-900">{dailyStats.today.consultations_created}</div>
+                          <p className="text-xs text-gray-500 mt-1">Booking baru hari ini</p>
+                          {dailyStats.today.consultations_completed > 0 && (
+                            <p className="text-xs text-green-600 mt-1">{dailyStats.today.consultations_completed} diselesaikan</p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                )}
+
+                {/* Stats Grid */}
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                  <Card>
                    <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -923,28 +1008,35 @@ export default function AdminPage() {
                    );
                  })}
                  
-                 {/* Service-specific stats */}
-                 <Card className="hover:shadow-md transition-shadow">
-                   <CardContent className="pt-4">
-                     <div className="text-2xl font-bold text-gray-900">{stats.veterinaryHealth}</div>
-                     <p className="text-xs text-gray-600 truncate">Pelayanan Kesehatan Hewan</p>
-                   </CardContent>
-                 </Card>
-                 
-                 <Card className="hover:shadow-md transition-shadow">
-                   <CardContent className="pt-4">
-                     <div className="text-2xl font-bold text-gray-900">{stats.nkvService}</div>
-                     <p className="text-xs text-gray-600 truncate">Rekomendasi NKV</p>
-                   </CardContent>
-                 </Card>
-                 
-                 <Card className="hover:shadow-md transition-shadow">
-                   <CardContent className="pt-4">
-                     <div className="text-2xl font-bold text-gray-900">{stats.practiceRecommendation}</div>
-                     <p className="text-xs text-gray-600 truncate">Rekomendasi Praktek</p>
-                   </CardContent>
-                 </Card>
-               </div>
+                  {/* Service-specific stats */}
+                     <Card className="hover:shadow-md transition-shadow">
+                     <CardContent className="pt-4">
+                       <div className="text-2xl font-bold text-gray-900">{stats.petHealthService}</div>
+                       <p className="text-xs text-gray-600 truncate">Pelayanan Kesehatan Hewan</p>
+                     </CardContent>
+                   </Card>
+                   
+                   <Card className="hover:shadow-md transition-shadow">
+                     <CardContent className="pt-4">
+                       <div className="text-2xl font-bold text-gray-900">{stats.veterinaryService}</div>
+                       <p className="text-xs text-gray-600 truncate">Registrasi Hewan (Vet)</p>
+                     </CardContent>
+                   </Card>
+                   
+                   <Card className="hover:shadow-md transition-shadow">
+                     <CardContent className="pt-4">
+                       <div className="text-2xl font-bold text-gray-900">{stats.nkvService}</div>
+                       <p className="text-xs text-gray-600 truncate">Rekomendasi NKV</p>
+                     </CardContent>
+                   </Card>
+                   
+                   <Card className="hover:shadow-md transition-shadow">
+                     <CardContent className="pt-4">
+                       <div className="text-2xl font-bold text-gray-900">{stats.practiceRecommendation}</div>
+                       <p className="text-xs text-gray-600 truncate">Rekomendasi Praktek</p>
+                     </CardContent>
+                   </Card>
+                </div>
 
                {/* Dashboard View ends */}
                </>
@@ -1002,12 +1094,13 @@ export default function AdminPage() {
                         </select>
                         <select
                           value={typeFilter}
-                          onChange={(e) => setTypeFilter(e.target.value as 'all' | 'NKV' | 'Dokter Hewan')}
+                          onChange={(e) => setTypeFilter(e.target.value as 'all' | 'NKV' | 'Dokter Hewan' | 'Veterinary')}
                           className="px-3 py-2 border border-gray-300 rounded-md text-sm bg-white"
                         >
                           <option value="all">Semua Jenis</option>
                           <option value="NKV">NKV</option>
                           <option value="Dokter Hewan">Dokter Hewan</option>
+                          <option value="Veterinary">Pelayanan Kesehatan Hewan</option>
                         </select>
                       </div>
                     </div>
@@ -1074,7 +1167,9 @@ export default function AdminPage() {
                                       {reg.applicant_name}
                                     </p>
                                     <p className="text-sm text-gray-500">
-                                      {reg.email}
+                                      {reg.type === 'Veterinary' && (reg as any).pet_name
+                                        ? `${(reg as any).pet_name} — ${reg.email}`
+                                        : reg.email}
                                     </p>
                                   </div>
                                 </TableCell>

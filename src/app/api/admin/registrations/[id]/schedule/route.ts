@@ -38,16 +38,36 @@ export async function POST(
     .eq('id', id)
     .single()
 
+  const { data: dokterReg } = await supabase
+    .from('dokter_hewan_registrations')
+    .select('id')
+    .eq('id', id)
+    .single()
+
+  const { data: vetReg } = await supabase
+    .from('veterinary_registrations')
+    .select('id')
+    .eq('id', id)
+    .single()
+
   const isNKV = !!nkvReg
-  const registrationType = isNKV ? 'NKV' : 'Dokter Hewan'
+  const isDokterHewan = !!dokterReg
+  const isVeterinary = !!vetReg
+
+  if (!isNKV && !isDokterHewan && !isVeterinary) {
+    return NextResponse.json({ error: 'Registration not found' }, { status: 404 })
+  }
+
+  const registrationType = isNKV ? 'NKV' : isDokterHewan ? 'Dokter Hewan' : 'Veterinary'
 
   // Create inspection schedule
   const { error: scheduleError } = await supabase
     .from('inspection_schedules')
     .insert({
       nkv_registration_id: isNKV ? id : null,
-      dokter_hewan_registration_id: isNKV ? null : id,
-      inspector_id: null, // Service role, no specific inspector
+      dokter_hewan_registration_id: isDokterHewan ? id : null,
+      veterinary_registration_id: isVeterinary ? id : null,
+      inspector_id: null,
       scheduled_date: scheduled_date,
       scheduled_time: scheduled_time,
       location,
@@ -61,7 +81,7 @@ export async function POST(
   }
 
   // Update registration status to field_inspection
-  const tableName = isNKV ? 'nkv_registrations' : 'dokter_hewan_registrations'
+  const tableName = isNKV ? 'nkv_registrations' : isDokterHewan ? 'dokter_hewan_registrations' : 'veterinary_registrations'
   
   const { error: updateError } = await supabase
     .from(tableName)
@@ -79,10 +99,11 @@ export async function POST(
   // Add tracking log
   await supabase.from('tracking_logs').insert({
     nkv_registration_id: isNKV ? id : null,
-    dokter_hewan_registration_id: isNKV ? null : id,
+    dokter_hewan_registration_id: isDokterHewan ? id : null,
+    veterinary_registration_id: isVeterinary ? id : null,
     registration_type: registrationType,
     status: 'field_inspection',
-    notes: `Pemeriksaan lapangan dijadwalkan pada ${new Date(scheduled_date).toLocaleDateString('id-ID')} pukul ${scheduled_time} di ${location}`,
+    notes: `Pemeriksaan lapangandidjadwalkan pada ${new Date(scheduled_date).toLocaleDateString('id-ID')} pukul ${scheduled_time} di ${location}`,
     created_by: null,
     created_at: new Date().toISOString()
   })

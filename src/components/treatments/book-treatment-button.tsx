@@ -1,24 +1,35 @@
 'use client'
+
 import { Stethoscope } from 'lucide-react'
 import { useState } from 'react'
+import TreatmentBookingModal from '@/components/treatments/book-treatment-modal'
 
-export default function BookTreatmentButton({ pets }: { pets: any[] }) {
+interface Pet {
+  id: string
+  name: string
+  species: string
+  breed: string | null
+}
+
+export default function BookTreatmentButton({ pets, userId }: { pets: Pet[]; userId: string }) {
   const [isOpen, setIsOpen] = useState(false)
   if (pets.length === 0) return null
+
   return (
     <>
-      <button onClick={() => setIsOpen(true)} className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 font-medium">
-        <Stethoscope className="h-5 w-5" /> Booking Pengobatan
+      <button
+        onClick={() => setIsOpen(true)}
+        className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors font-medium"
+      >
+        <Stethoscope className="h-5 w-5" />
+        Booking Pengobatan
       </button>
-      {isOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
-            <h2 className="text-2xl font-bold mb-4">Booking Pengobatan</h2>
-            <p className="text-gray-500 mb-4">Fitur booking pengobatan sedang dikembangkan.</p>
-            <button onClick={() => setIsOpen(false)} className="w-full py-2 bg-yellow-600 text-white rounded-lg">Tutup</button>
-          </div>
-        </div>
-      )}
+      <TreatmentBookingModal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        pets={pets}
+        userId={userId}
+      />
     </>
   )
 }

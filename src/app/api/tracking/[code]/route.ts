@@ -80,6 +80,37 @@ export async function GET(
       })
     }
 
+    // Try to find in Veterinary registrations
+    const { data: vetData, error: vetError } = await supabase
+      .from('veterinary_registrations')
+      .select(`
+        id,
+        registration_number,
+        status,
+        created_at,
+        verification_notes
+      `)
+      .eq('registration_number', normalizedCode)
+      .single()
+
+    if (vetData) {
+      // Fetch tracking logs for this Veterinary registration
+      const { data: vetLogs } = await supabase
+        .from('tracking_logs')
+        .select('status, created_at, notes')
+        .eq('veterinary_registration_id', vetData.id)
+        .order('created_at', { ascending: true })
+
+      return NextResponse.json({
+        registration_number: vetData.registration_number,
+        type: 'Veterinary',
+        status: vetData.status,
+        created_at: vetData.created_at,
+        description: vetData.verification_notes,
+        tracking_logs: vetLogs || []
+      })
+    }
+
     return NextResponse.json({ error: 'Nomor tracking tidak ditemukan' }, { status: 404 })
   } catch (error) {
     return NextResponse.json({ error: 'Terjadi kesalahan server' }, { status: 500 })

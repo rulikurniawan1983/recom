@@ -17,7 +17,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check if registration belongs to user
+    // Check if registration belongs to user — try all three tables
     const { data: nkvReg } = await supabase
       .from('nkv_registrations')
       .select('id, user_id, status, registration_number')
@@ -26,6 +26,7 @@ export async function POST(
 
     let tableName: string | null = null
     let regNumber: string | null = null
+
     if (nkvReg && nkvReg.user_id === user.id) {
       tableName = 'nkv_registrations'
       regNumber = nkvReg.registration_number
@@ -39,6 +40,17 @@ export async function POST(
       if (dhReg && dhReg.user_id === user.id) {
         tableName = 'dokter_hewan_registrations'
         regNumber = dhReg.registration_number
+      } else {
+        const { data: vetReg } = await supabase
+          .from('veterinary_registrations')
+          .select('id, user_id, status, registration_number')
+          .eq('id', id)
+          .single()
+
+        if (vetReg && vetReg.user_id === user.id) {
+          tableName = 'veterinary_registrations'
+          regNumber = vetReg.registration_number
+        }
       }
     }
 
@@ -84,7 +96,7 @@ export async function POST(
     if (documentUrls.length > 0) {
       const docRecords = documentUrls.map((doc: { file_name: string; file_url: string; document_type: string }) => ({
         registration_id: id,
-        registration_type: tableName === 'nkv_registrations' ? 'nkv' : 'dokter_hewan',
+        registration_type: tableName === 'nkv_registrations' ? 'nkv' : tableName === 'dokter_hewan_registrations' ? 'dokter_hewan' : 'veterinary',
         document_type: doc.document_type,
         file_url: doc.file_url,
         file_name: doc.file_name,
@@ -105,10 +117,12 @@ export async function POST(
 
     // Add tracking log
     const isNKV = tableName === 'nkv_registrations'
+    const isDH = tableName === 'dokter_hewan_registrations'
     await supabase.from('tracking_logs').insert({
       nkv_registration_id: isNKV ? id : null,
-      dokter_hewan_registration_id: isNKV ? null : id,
-      registration_type: isNKV ? 'NKV' : 'Dokter Hewan',
+      dokter_hewan_registration_id: isDH ? id : null,
+      veterinary_registration_id: !isNKV && !isDH ? id : null,
+      registration_type: isNKV ? 'NKV' : isDH ? 'Dokter Hewan' : 'Veterinary',
       status: 'submitted',
       notes: `Pemohon mengajukan ulang setelah revisi diminta oleh admin`,
       created_by: user.id,

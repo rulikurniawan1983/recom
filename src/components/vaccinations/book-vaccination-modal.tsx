@@ -2,12 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { X, Calendar, Clock, User, MapPin, Check } from 'lucide-react'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { supabase } from '@/lib/supabase'
 
 interface Pet {
   id: string
@@ -39,12 +34,16 @@ interface BookVaccinationModalProps {
   isOpen: boolean
   onClose: () => void
   pets: Pet[]
+  userId: string
+  onBookingComplete?: () => void
 }
 
 export default function BookVaccinationModal({
   isOpen,
   onClose,
-  pets
+  pets,
+  userId,
+  onBookingComplete
 }: BookVaccinationModalProps) {
   const [step, setStep] = useState<'pet' | 'doctor' | 'schedule' | 'confirm'>('pet')
   const [loading, setLoading] = useState(false)
@@ -143,26 +142,23 @@ export default function BookVaccinationModal({
     setError('')
 
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-
-      if (!user) {
-        throw new Error('Anda harus login terlebih dahulu')
-      }
-
       const { error: bookingError } = await supabase
         .from('vaccinations')
         .insert({
           pet_id: selectedPet.id,
-          user_id: user.id,
+          user_id: userId,
           doctor_id: selectedDoctor?.id,
           schedule_id: selectedSchedule.id,
           vaccination_date: vaccinationDate,
           notes: notes || null,
-          status: 'pending'
+          status: 'pending',
+          ticket_id: null,
+          qr_code: null,
         })
 
       if (bookingError) throw bookingError
 
+      onBookingComplete?.()
       onClose()
     } catch (err: any) {
       setError(err.message)

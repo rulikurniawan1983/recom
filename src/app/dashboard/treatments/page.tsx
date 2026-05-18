@@ -52,7 +52,7 @@ export default async function TreatmentsPage() {
             <h2 className="text-3xl font-bold text-gray-900">Pengobatan Hewan</h2>
             <p className="text-gray-500 mt-1">Kelola permintaan pengobatan dan pemeriksaan kesehatan</p>
           </div>
-          <BookTreatmentButton pets={pets || []} />
+          <BookTreatmentButton pets={pets || []} userId={user.id} />
         </div>
 
         {!pets || pets.length === 0 ? (

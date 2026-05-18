@@ -9,7 +9,7 @@ const services = [
     description: 'Daftarkan hewan peliharaan Anda dengan data lengkap, riwayat kesehatan, dan foto. Sistem akan menghasilkan ID unik untuk setiap hewan.',
     features: ['Data hewan lengkap', 'Riwayat kesehatan', 'Foto profil hewan', 'ID unik hewan'],
     color: 'bg-blue-100 text-blue-600',
-    href: '/dashboard/pets/register',
+    href: '/services/veterinary/register',
     buttonText: 'Daftarkan Hewan',
   },
   {

@@ -51,15 +51,40 @@ export async function POST(
       auth: { autoRefreshToken: false, persistSession: false }
     })
 
-    // Determine registration type
+    // Determine registration type — try all three tables
     const { data: nkvReg } = await serviceSupabase
       .from('nkv_registrations')
       .select('id')
       .eq('id', id)
       .single()
 
+    const { data: dokterReg } = await serviceSupabase
+      .from('dokter_hewan_registrations')
+      .select('id')
+      .eq('id', id)
+      .single()
+
+    const { data: vetReg } = await serviceSupabase
+      .from('veterinary_registrations')
+      .select('id')
+      .eq('id', id)
+      .single()
+
     const isNKV = !!nkvReg
-    const tableName = isNKV ? 'nkv_registrations' : 'dokter_hewan_registrations'
+    const isDokterHewan = !!dokterReg
+    const isVeterinary = !!vetReg
+
+    if (!isNKV && !isDokterHewan && !isVeterinary) {
+      return NextResponse.json({ error: 'Registration not found' }, { status: 404 })
+    }
+
+    const tableName = isNKV ? 'nkv_registrations'
+      : isDokterHewan ? 'dokter_hewan_registrations'
+      : 'veterinary_registrations'
+
+    const registrationType = isNKV ? 'NKV'
+      : isDokterHewan ? 'Dokter Hewan'
+      : 'Veterinary'
 
     let newStatus: string = ''
 
@@ -101,9 +126,10 @@ export async function POST(
 
     // Add tracking log
     await serviceSupabase.from('tracking_logs').insert({
-      nkv_registration_id: tableName === 'nkv_registrations' ? id : null,
-      dokter_hewan_registration_id: tableName === 'dokter_hewan_registrations' ? id : null,
-      registration_type: tableName === 'nkv_registrations' ? 'NKV' : 'Dokter Hewan',
+      nkv_registration_id: isNKV ? id : null,
+      dokter_hewan_registration_id: isDokterHewan ? id : null,
+      veterinary_registration_id: isVeterinary ? id : null,
+      registration_type: registrationType,
       status: newStatus,
       notes: notes,
       created_by: user.id,
