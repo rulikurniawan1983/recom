@@ -814,16 +814,27 @@ export default function AdminPage() {
     { key: 'analitik',   label: 'Analitik',    icon: BarChart3 },
   ]
 
+  const handleLogout = async () => {
+    await fetch('/api/auth/signout', { method: 'POST' })
+    router.replace('/login')
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white border-b border-gray-200">
-        <div className="h-14 lg:h-15 px-4 lg:px-6 flex items-center">
+        <div className="h-14 lg:h-15 px-4 lg:px-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
               <ClipboardCheck className="h-4 w-4 text-white" />
             </div>
             <span className="font-bold text-gray-900 text-sm">Admin VetSys</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-gray-500 hidden sm:inline">{userEmail}</span>
+            <Button variant="outline" size="sm" onClick={handleLogout} className="h-8 text-xs gap-1.5">
+              <LogOut className="h-3.5 w-3.5" /> Logout
+            </Button>
           </div>
         </div>
 
