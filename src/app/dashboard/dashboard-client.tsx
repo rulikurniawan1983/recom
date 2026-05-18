@@ -26,7 +26,6 @@ import {
   Stethoscope,
   HeartPulse,
   ClipboardList,
-  User,
   Settings,
   LogOut
 } from 'lucide-react'

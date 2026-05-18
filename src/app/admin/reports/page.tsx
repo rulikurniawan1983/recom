@@ -94,8 +94,18 @@ export default function AdminReportsPage() {
     rabies: rows.reduce((s, r) => s + r.rabies_cases, 0),
   }), [rows])
 
-  const handleExportCSV = () => {
-    downloadCSV(`laporan_${year}.csv`, rows)
+   const handleExportCSV = () => {
+    const headers = ['Bulan', 'Tahun', 'Vaksinasi', 'Pengobatan', 'Konsultasi', 'Kasus Rabies']
+    const dataRows = rows.map(r => [r.month, String(r.year), String(r.vaccinations), String(r.treatments), String(r.consultations), String(r.rabies_cases)])
+    const totalRow = ['TOTAL', String(year), String(totals.vacc), String(totals.treat), String(totals.consult), String(totals.rabies)]
+    const csv = [headers, ...dataRows, totalRow].map((r: string[]) => r.join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `laporan_veteriner_${year}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i)

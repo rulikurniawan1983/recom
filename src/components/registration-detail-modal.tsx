@@ -291,6 +291,12 @@ const DOCUMENT_OPTIONS = [
 export default function RegistrationDetailModal({
   isOpen, onClose, registration, onUpdate, onDelete, onResubmit,
 }: RegistrationDetailModalProps) {
+  if (!isOpen) return null;
+  if (!registration) {
+    onClose();
+    return null;
+  }
+
   interface FormData {
     business_name?: string; business_address?: string; business_phone?: string;
     business_email?: string; business_type?: string; product_type?: string; product_description?: string;
