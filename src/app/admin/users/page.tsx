@@ -127,11 +127,11 @@ export default function PromoteUserPage() {
   }
 
   return (
-    <div className="min-h-screen bg-blue-100/80 backdrop-blur-sm py-8">
+    <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
-        <Card className="mb-6 bg-white/80 backdrop-blur-sm">
+        <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-blue-900">Kelola Pengguna</CardTitle>
+            <CardTitle className="text-gray-900">Kelola Pengguna</CardTitle>
             <CardDescription>Ubah role pengguna menjadi admin</CardDescription>
           </CardHeader>
           <CardContent>
@@ -164,7 +164,7 @@ export default function PromoteUserPage() {
                 <p className="text-center text-gray-500 py-4">Tidak ada pengguna ditemukan</p>
               ) : (
                 profiles.map((profile) => (
-                  <div key={profile.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-blue-200">
+                  <div key={profile.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
                     <div>
                       <p className="font-medium text-blue-900">{profile.full_name || 'Tanpa nama'}</p>
                       <p className="text-sm text-blue-700">{profile.email}</p>

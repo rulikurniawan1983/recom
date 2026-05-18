@@ -9,27 +9,21 @@ import {
   ClipboardCheck,
   Users,
   LogOut,
-  Syringe,
-  Stethoscope,
-  Video,
-  ClipboardCheck as AssessIcon,
+  Search,
+  Plus,
+  Trash2,
   Calendar,
   CheckCircle,
-  Clock,
+  RefreshCw,
   XCircle,
   AlertCircle,
   Eye,
-  Trash2,
-  Search,
-  File,
-  Plus,
-  RefreshCw,
-  Filter,
-  X,
-  Package,
+  Syringe,
+  BarChart3,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+
 import {
   Dialog,
   DialogContent,
@@ -166,8 +160,8 @@ export default function AdminPage() {
   const [deleteUser, setDeleteUser] = useState<Profile | null>(null)
   const [deletingUser, setDeletingUser] = useState(false)
 
-  // ── View mode: dashboard | applications | users ──
-  const [viewMode, setViewMode] = useState<'dashboard' | 'applications' | 'users'>('dashboard')
+  // ── View mode ──
+  const [viewMode, setViewMode] = useState<'dashboard' | 'permohonan' | 'pengguna' | 'layanan' | 'analitik'>('dashboard')
 
   // ─────────────────────────────────────────────────────
   // Data fetch
@@ -182,38 +176,21 @@ export default function AdminPage() {
         fetch('/api/admin/users'),
         fetch('/api/admin/daily-stats').catch(() => ({ ok: false } as Response)),
       ])
-
-      if (regRes.ok) {
-        const data = await regRes.json()
-        setRegistrations(Array.isArray(data) ? data : [])
-      } else {
-        setError('Gagal memuat data permohonan')
-      }
-
-      if (whoamiRes.ok) {
-        const data = await whoamiRes.json()
-        setUserEmail(data.user?.email || 'Admin')
-      }
-
-      if (usersRes.ok) {
-        const data = await usersRes.json()
-        setUsers(Array.isArray(data) ? data : [])
-      }
-
-      if (statsRes.ok) {
-        const data = await statsRes.json()
-        setDailyStats(data)
-      }
-    } catch {
-      setError('Tidak dapat terhubung ke server')
-    } finally {
-      setLoading(false)
-    }
+      if (regRes.ok) { const data = await regRes.json(); setRegistrations(Array.isArray(data) ? data : []) }
+      else { setError('Gagal memuat data permohonan') }
+      if (whoamiRes.ok) { const data = await whoamiRes.json(); setUserEmail(data.user?.email || 'Admin') }
+      if (usersRes.ok) { const data = await usersRes.json(); setUsers(Array.isArray(data) ? data : []) }
+      if (statsRes.ok) { const data = await statsRes.json(); setDailyStats(data) }
+    } catch { setError('Tidak dapat terhubung ke server') }
+    finally { setLoading(false) }
   }, [])
 
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
+  useEffect(() => { fetchData() }, [fetchData])
+
+  // analytics year/month filter state
+  const [anYear, setAnYear] = useState<number>(new Date().getFullYear())
+  const [anMonth, setAnMonth] = useState<string>('all')
+
 
   // ─────────────────────────────────────────────────────
   // Stats
@@ -408,7 +385,7 @@ export default function AdminPage() {
       )}
       {(reg.status === 'field_inspection' || reg.status === 'assessment') && (
         <Button size="sm" onClick={() => openAssessModal(reg)} className="h-7 text-xs bg-purple-600 hover:bg-purple-700">
-          <AssessIcon className="h-3 w-3 mr-1" /> Penilaian
+          <ClipboardCheck className="h-3 w-3 mr-1" /> Penilaian
         </Button>
       )}
       {reg.status !== 'draft' && reg.status !== 'approved' && reg.status !== 'rejected' && (
@@ -549,88 +526,54 @@ export default function AdminPage() {
   )
 
   // ─────────────────────────────────────────────────────
-  // Sidebar
+  // Tabs
   // ─────────────────────────────────────────────────────
-  const navItems = [
-    { id: 'dashboard' as const, label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'applications' as const, label: 'Semua Permohonan', icon: FileText },
-    { id: 'users' as const, label: 'Daftar Pengguna', icon: Users },
+  type ViewMode = 'dashboard' | 'permohonan' | 'pengguna' | 'layanan' | 'analitik'
+  const tabs: { key: ViewMode; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+    { key: 'dashboard',  label: 'Dashboard',   icon: LayoutDashboard },
+    { key: 'permohonan', label: 'Permohonan',  icon: FileText },
+    { key: 'pengguna',   label: 'Pengguna',    icon: Users },
+    { key: 'layanan',    label: 'Layanan',     icon: Syringe },
+    { key: 'analitik',   label: 'Analitik',    icon: BarChart3 },
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-50 w-60 bg-white border-r border-gray-200 transform transition-transform duration-200 lg:translate-x-0 -translate-x-full">
-        <div className="flex flex-col h-full">
-          <div className="flex items-center gap-2 h-14 px-5 border-b border-gray-200">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200">
+        <div className="h-14 lg:h-15 px-4 lg:px-6 flex items-center">
+          <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
               <ClipboardCheck className="h-4 w-4 text-white" />
             </div>
             <span className="font-bold text-gray-900 text-sm">Admin VetSys</span>
           </div>
+        </div>
 
-          <nav className="flex-1 px-3 py-4 space-y-1">
-            {navItems.map(item => (
+        {/* Tab bar */}
+        <div className="border-t border-gray-100 bg-white px-4 lg:px-6 flex items-center gap-1 overflow-x-auto">
+          {tabs.map(tab => {
+            const Icon = tab.icon
+            const active = viewMode === tab.key
+            return (
               <button
-                key={item.id}
-                onClick={() => setViewMode(item.id)}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg transition-colors ${
-                  viewMode === item.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-100'
+                key={tab.key}
+                onClick={() => { setViewMode(tab.key); setSearchQuery(''); setStatusFilter('all'); setServiceTab('all') }}
+                className={`flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-t-lg border-b-2 transition-colors whitespace-nowrap ${
+                  active
+                    ? 'border-blue-600 text-blue-700 bg-blue-50/50'
+                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
-                <item.icon className="h-4 w-4" />
-                {item.label}
+                <Icon className="h-3.5 w-3.5" />
+                {tab.label}
               </button>
-            ))}
-
-            <div className="my-2 border-t border-gray-200" />
-            <p className="px-3 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Layanan</p>
-
-            <button onClick={() => router.push('/admin/vaccinations')} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
-              <Syringe className="h-4 w-4 text-green-600" /> Vaksinasi
-            </button>
-            <button onClick={() => router.push('/admin/vaccine-stock')} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
-              <Package className="h-4 w-4 text-teal-600" /> Stok Vaksin
-            </button>
-            <button onClick={() => router.push('/admin/treatments')} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
-              <Stethoscope className="h-4 w-4 text-yellow-600" /> Pengobatan
-            </button>
-            <button onClick={() => router.push('/admin/consultations')} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
-              <Video className="h-4 w-4 text-purple-600" /> Konsultasi
-            </button>
-            <button onClick={() => router.push('/admin/verification')} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
-              <File className="h-4 w-4" /> Verifikasi NKV &amp; Praktek
-            </button>
-          </nav>
-
-          <div className="px-3 py-4 border-t border-gray-200">
-            <div className="flex items-center gap-2 mb-3 px-1">
-              <div className="w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center text-xs font-medium text-gray-600">
-                {userEmail.charAt(0)?.toUpperCase() || 'A'}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-gray-900 truncate">Admin</p>
-                <p className="text-xs text-gray-500 truncate">{userEmail}</p>
-              </div>
-            </div>
-            <Button variant="ghost" size="sm" onClick={() => router.push('/logout')} className="w-full text-red-600 hover:bg-red-50 justify-start h-8 text-xs">
-              <LogOut className="h-3.5 w-3.5 mr-2" /> Logout
-            </Button>
-          </div>
+            )
+          })}
         </div>
-      </aside>
+      </header>
 
-      {/* Main */}
-      <main className="flex-1 lg:ml-60">
-        {/* Mobile header */}
-        <header className="bg-white border-b border-gray-200 lg:hidden h-14 px-4 flex items-center justify-between">
-          <span className="font-bold text-gray-900 text-sm">Admin VetSys</span>
-          <Button variant="ghost" size="sm" onClick={() => router.push('/logout')} className="text-red-600">
-            <LogOut className="h-4 w-4" />
-          </Button>
-        </header>
-
-        <div className="p-4 lg:p-8">
+      <div className="p-4 lg:p-8">
           {/* Dashboard View */}
           {viewMode === 'dashboard' && (
             <div className="space-y-6">
@@ -686,7 +629,7 @@ export default function AdminPage() {
           )}
 
           {/* Applications View */}
-          {viewMode === 'applications' && (
+          {viewMode === 'permohonan' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -737,7 +680,7 @@ export default function AdminPage() {
           )}
 
           {/* Users View */}
-          {viewMode === 'users' && (
+          {viewMode === 'pengguna' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -762,7 +705,6 @@ export default function AdminPage() {
             </div>
           )}
         </div>
-      </main>
 
       {/* ── Modals ── */}
       <VerifyModal

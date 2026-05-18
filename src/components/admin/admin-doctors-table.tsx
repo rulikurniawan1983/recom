@@ -124,7 +124,7 @@ export default function AdminDoctorsTable({ doctors: initialDoctors }: AdminDoct
           body: JSON.stringify(body)
         })
       } else {
-        res = await fetch('/api/doctors/standalone', {
+          res = await fetch('/api/doctors', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
